@@ -1,0 +1,94 @@
+name: Theme Migrator
+
+# Builds and packs Theme Migrator on every change, and publishes to nuget.org
+# when a tag like "ThemeMigrator-v1.2026.10.1" is pushed.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'ThemeMigrator/**', '.github/workflows/theme-migrator.yml' ]
+    tags: [ 'ThemeMigrator-v*' ]
+  pull_request:
+    paths: [ 'ThemeMigrator/**', '.github/workflows/theme-migrator.yml' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create the GitHub release on tags
+
+env:
+  PROJECT: ThemeMigrator/src/ThemeMigrator/ThemeMigrator.csproj
+  NUSPEC: ThemeMigrator/src/ThemeMigrator/ThemeMigrator.nuspec
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Check versions match
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$csproj = Get-Content $env:PROJECT
+          [xml]$spec   = Get-Content $env:NUSPEC
+          $projVersion = ($csproj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          $specVersion = $spec.package.metadata.version
+          if ($projVersion -ne $specVersion) { throw "Version mismatch: csproj=$projVersion, nuspec=$specVersion" }
+          if ($env:GITHUB_REF -like 'refs/tags/ThemeMigrator-v*') {
+            $tagVersion = $env:GITHUB_REF -replace '^refs/tags/ThemeMigrator-v', ''
+            if ($tagVersion -ne $specVersion) { throw "Tag version $tagVersion doesn't match package version $specVersion" }
+          }
+          "version=$specVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Theme Migrator version $specVersion"
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.PROJECT }} -c Release -p:CopyToXrmToolBox=false
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          $projectDir = Split-Path $env:PROJECT
+          dotnet pack $env:PROJECT -c Release --no-build -o artifacts `
+            "-p:NuspecFile=$((Resolve-Path $env:NUSPEC).Path)" `
+            "-p:NuspecBasePath=$((Resolve-Path $projectDir).Path)"
+          Get-ChildItem artifacts
+
+      - name: Check package layout
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $pkg = Get-ChildItem artifacts/*.nupkg | Select-Object -First 1
+          $zip = [IO.Compression.ZipFile]::OpenRead($pkg.FullName)
+          $entries = $zip.Entries.FullName
+          $zip.Dispose()
+          $entries | ForEach-Object { Write-Host "  $_" }
+          foreach ($required in 'lib/net48/Plugins/ThemeMigrator.dll', 'images/icon.png', 'docs/README.md') {
+            if ($entries -notcontains $required) { throw "Package is missing $required" }
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ThemeMigrator-nupkg-${{ steps.version.outputs.version }}
+          path: artifacts/*.nupkg
+
+      - name: Push to nuget.org
+        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) { throw 'Add the NUGET_API_KEY repository secret first.' }
+          dotnet nuget push "artifacts/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Theme Migrator ${{ steps.version.outputs.version }}
+          files: artifacts/*.nupkg
+          body: |
+            Theme Migrator ${{ steps.version.outputs.version }}, also available in XrmToolBox → Tool Library once nuget.org has indexed it.
+            See the [release notes](https://github.com/vikashkumar669/XrmTools/tree/main/ThemeMigrator#release-notes).

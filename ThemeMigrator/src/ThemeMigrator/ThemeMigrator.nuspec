@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="5.3">
+    <!-- Package id must be unique on nuget.org; keep it stable once published -->
+    <id>VikashKumar.XrmToolBox.ThemeMigrator</id>
+    <!-- Keep in sync with <Version> in ThemeMigrator.csproj (format 1.YYYY.M.rev) -->
+    <version>1.2026.10.1</version>
+    <title>Theme Migrator</title>
+    <authors>Vikash Kumar</authors>
+    <owners>vikashkumar669</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/vikashkumar669/XrmTools/tree/main/ThemeMigrator</projectUrl>
+    <repository type="git" url="https://github.com/vikashkumar669/XrmTools.git" branch="main" />
+    <icon>images\icon.png</icon>
+    <iconUrl>https://raw.githubusercontent.com/vikashkumar669/XrmTools/main/ThemeMigrator/src/ThemeMigrator/Resources/icon128.png</iconUrl>
+    <readme>docs\README.md</readme>
+    <description>XrmToolBox tool that migrates model-driven app themes from a source to a target Dataverse environment with the same configuration, icons and GUIDs: classic themes (all colors and the logo) and modern New look theme settings (Custom theme definition and Override app header color, at environment and app level) together with their theme XML and logo web resources. Shows a preview of what will be created or updated in the target, protects Microsoft system themes, and can optionally publish the migrated theme and set it as the default.</description>
+    <summary>Migrate classic and modern model-driven app themes, logos included, between Dataverse environments while keeping the same GUIDs.</summary>
+    <releaseNotes>1.2026.10.1: First release.
+- Classic themes with their logo web resource
+- Modern theme settings (Custom theme definition, Override app header color) at environment and app level, with their theme XML and logo web resources
+- Same-GUID create or update, with a preview of what will be created or updated in the target
+- Optional Publish and set as default
+- Protection for system themes, named confirmation dialog, double-click guard</releaseNotes>
+    <copyright>Copyright © Vikash Kumar 2026</copyright>
+    <!-- "XrmToolBox" must be the first tag for the tool to appear in the XrmToolBox Tool Library -->
+    <tags>XrmToolBox Theme Themes Migration Branding Logo Dataverse Dynamics365 PowerApps ModelDriven</tags>
+    <dependencies>
+      <group targetFramework=".NETFramework4.8">
+        <!-- Host version marker required by the Tool Library -->
+        <dependency id="XrmToolBox" version="1.2025.10.74" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\net48\ThemeMigrator.dll" target="lib\net48\Plugins\ThemeMigrator.dll" />
+    <file src="Resources\icon128.png" target="images\icon.png" />
+    <file src="..\..\README.md" target="docs\README.md" />
+  </files>
+</package>
