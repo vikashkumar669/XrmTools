@@ -7,17 +7,22 @@ XrmToolBox tools for Microsoft Dataverse / Dynamics 365, by Vikash Kumar. Each t
 | Tool | What it does | NuGet package | Docs |
 |---|---|---|---|
 | <img src="ThemeMigrator/src/ThemeMigrator/Resources/icon32.png" width="20"> **Theme Migrator** | Migrates classic and modern (New look) model-driven app themes, with their logos and theme XML, from a source to a target environment, keeping the same GUIDs. Can optionally publish the theme and set it as the default. | `VikashKumar.XrmToolBox.ThemeMigrator` | [README](ThemeMigrator/README.md) |
+| <img src="DataQualityStudio/src/DataQualityStudio/Resources/icon32.png" width="20"> **Data Quality Studio** | Dataverse Excel mapping and data quality studio: maps Excel/CSV migration templates to Dataverse columns, validates required fields, data types, choices and lookups, previews the transformed values, reports unmapped columns without stopping, and exports row-level errors with suggested corrections. Mappings are saved as reusable profiles. Read-only: never writes to Dataverse. | `VikashKumar.XrmToolBox.DataQualityStudio` | [README](DataQualityStudio/README.md) |
 
 ## Installing
 In XrmToolBox, open **Tool Library**, search for the tool name and click **Install**. Tools appear there after their NuGet package has been published and approved by XrmToolBox.
 
 ## Repository layout
+Every tool is independent: its own folder, solution, NuGet package, version and workflow. Changing or releasing one tool never touches another.
 ```
+ThemeMigrator/                  Theme Migrator
+DataQualityStudio/              Data Quality Studio
 <ToolName>/                     one folder per tool
   <ToolName>.sln
   build/pack.ps1                local build + pack + push
   src/<ToolName>/               plugin project (.NET Framework 4.8) and .nuspec
 .github/workflows/              one build/release workflow per tool
+                                (theme-migrator.yml, data-quality-studio.yml)
 ```
 
 ## Releasing a tool

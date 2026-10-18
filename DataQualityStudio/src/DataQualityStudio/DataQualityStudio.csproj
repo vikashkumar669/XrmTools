@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>DataQualityStudio</RootNamespace>
+    <AssemblyName>DataQualityStudio</AssemblyName>
+    <!-- XrmToolBox convention: 1.YYYY.M.revision. Keep in sync with DataQualityStudio.nuspec -->
+    <Version>1.2026.10.1</Version>
+    <AssemblyVersion>1.2026.10.1</AssemblyVersion>
+    <FileVersion>1.2026.10.1</FileVersion>
+    <Product>Data Quality Studio</Product>
+    <Company>Vikash Kumar</Company>
+    <Authors>Vikash Kumar</Authors>
+    <Copyright>Copyright © Vikash Kumar 2026</Copyright>
+    <Description>XrmToolBox tool: Dataverse Excel mapping and data quality studio. Maps Excel/CSV migration templates to Dataverse columns and validates required fields, data types, choices and lookups before import.</Description>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- Set to false if you don't want each Debug build copied into your XrmToolBox Plugins folder -->
+    <CopyToXrmToolBox Condition="'$(CopyToXrmToolBox)' == ''">true</CopyToXrmToolBox>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Host assemblies are supplied by XrmToolBox at runtime, so they are referenced for compile only and never copied -->
+    <PackageReference Include="XrmToolBoxPackage" Version="1.2025.10.74">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <!-- XrmToolBox.Extensibility 1.2025.10.74 is compiled against McTools.Xrm.Connection 1.2025.9.64, but the
+         package only requires an older version. Pin the matching version explicitly (error CS1705 otherwise). -->
+    <PackageReference Include="MscrmTools.Xrm.Connection" Version="1.2025.9.64">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Resources\*.png" />
+  </ItemGroup>
+
+  <!-- Debug convenience: copy the tool into the per-user XrmToolBox Plugins folder (close XrmToolBox first) -->
+  <Target Name="CopyToXrmToolBoxPlugins" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' And '$(CopyToXrmToolBox)' == 'true' And '$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <XtbPluginsDir>$(APPDATA)\MscrmTools\XrmToolBox\Plugins</XtbPluginsDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(XtbPluginsDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(XtbPluginsDir)" ContinueOnError="true" />
+    <Message Importance="high" Text="Data Quality Studio copied to $(XtbPluginsDir)" />
+  </Target>
+
+</Project>

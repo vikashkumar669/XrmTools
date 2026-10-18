@@ -1,0 +1,5 @@
+﻿First Name;Last Name;Email;Job Title;Company Name;Birthday;Annual Income;Gender;Notes
+Jane;Doe;jane.doe@contoso.com;Buyer;Contoso Ltd;12.05.1985;45.000,00;Female;"Key contact; prefers ""email"""
+John;;john@fabrikam.com;CTO;Fabrikam;1979-11-02;120000;Male;"Multi-line
+note"
+Chris;Lee;chris.lee@;Analyst;Unknown Company;31/12/1990;abc;M;
