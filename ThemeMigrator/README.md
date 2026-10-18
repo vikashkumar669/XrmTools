@@ -99,18 +99,15 @@ The Tool Library is fed from **nuget.org**. The package must:
 Publishing uses **nuget.org Trusted Publishing**: GitHub proves the workflow's identity to nuget.org, which issues a one-hour key for that run, so no API key is stored anywhere. The policy is already set up on nuget.org (*Account → Trusted Publishing*): owner `VikashKumar0491`, repository `vikashkumar669/XrmTools`, workflow `theme-migrator.yml`, limited to the `VikashKumar.XrmToolBox.ThemeMigrator` package.
 
 1. Bump the version in **both** `src/ThemeMigrator/ThemeMigrator.csproj` and `src/ThemeMigrator/ThemeMigrator.nuspec`, using the format `1.YYYY.M.rev`, and update `<releaseNotes>`.
-2. Commit, then push a tag that matches the version:
-   ```bash
-   git tag ThemeMigrator-v1.2026.10.1
-   git push origin ThemeMigrator-v1.2026.10.1
-   ```
-3. The **Theme Migrator** workflow then:
-   - builds the Release DLL,
-   - checks that the csproj, nuspec and tag versions match,
-   - packs the `.nupkg`, logs in to nuget.org through Trusted Publishing and pushes it,
-   - and attaches the package to a GitHub release.
+2. Commit and push to `main`. When the workflow sees a version that **isn't on nuget.org yet**, it:
+   - builds the Release DLL and checks that the csproj and nuspec versions match,
+   - packs the `.nupkg` and checks its layout,
+   - logs in to nuget.org through Trusted Publishing and pushes the package,
+   - and creates the GitHub release `ThemeMigrator-v<version>` with the package attached.
 
-Every push to `main` that touches `ThemeMigrator/` also builds and packs, so a test `.nupkg` is always available under the workflow run's **Artifacts**.
+Pushing a tag `ThemeMigrator-v<version>` also publishes (the tag must match the version). Pushes that don't change the version only build and pack.
+
+Every build's `.nupkg` is also available under the workflow run's **Artifacts**.
 
 If you rename the workflow file or move the repo, update the Trusted Publishing policy on nuget.org to match.
 

@@ -1,7 +1,9 @@
 name: Theme Migrator
 
-# Builds and packs Theme Migrator on every change, and publishes to nuget.org
-# when a tag like "ThemeMigrator-v1.2026.10.1" is pushed.
+# Builds and packs Theme Migrator on every change. Publishes to nuget.org (Trusted Publishing)
+# and creates a GitHub release when:
+#   - a push to main carries a version that isn't on nuget.org yet (bump the version → release), or
+#   - a tag like "ThemeMigrator-v1.2026.10.1" is pushed.
 on:
   push:
     branches: [ main ]
@@ -75,24 +77,44 @@ jobs:
           name: ThemeMigrator-nupkg-${{ steps.version.outputs.version }}
           path: artifacts/*.nupkg
 
+      - name: Decide whether to publish
+        id: release
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $publish = $false
+          if ($env:GITHUB_REF -like 'refs/tags/ThemeMigrator-v*') { $publish = $true }
+          elseif ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:GITHUB_REF -eq 'refs/heads/main') {
+            $id = 'vikashkumar.xrmtoolbox.thememigrator'
+            try {
+              $published = (Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$id/index.json").versions
+            } catch { $published = @() }   # 404 until the first version exists
+            $publish = -not ($published -contains $version.ToLowerInvariant())
+            Write-Host "Already on nuget.org: $($published -join ', ')"
+          }
+          Write-Host "Publish $version : $publish"
+          "publish=$($publish.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
       # nuget.org Trusted Publishing: exchanges GitHub's OIDC token for a one-hour API key.
       # Policy on nuget.org: owner VikashKumar0491, repo vikashkumar669/XrmTools, workflow theme-migrator.yml
       - name: NuGet login (Trusted Publishing)
-        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        if: steps.release.outputs.publish == 'true'
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: VikashKumar0491
 
       - name: Push to nuget.org
-        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        if: steps.release.outputs.publish == 'true'
         shell: pwsh
         run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        if: steps.release.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ThemeMigrator-v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: Theme Migrator ${{ steps.version.outputs.version }}
           files: artifacts/*.nupkg
           body: |
