@@ -47,6 +47,7 @@ namespace DataQualityStudio
         private MappingProfile _pendingProfile;
         private string _pendingEntity;
         private string _preferredSheet;
+        private int _preferredHeaderRow = 1;
         private string _profileName;
         private bool _suppress;
         private bool _entitiesRequested;
@@ -222,6 +223,8 @@ namespace DataQualityStudio
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 _filePath = dlg.FileName;
             }
+            // A new file starts at header row 1 unless the loaded profile says otherwise
+            SetHeaderRow(_profileName != null ? _preferredHeaderRow : 1);
             LoadSheets();
         }
 
@@ -288,6 +291,13 @@ namespace DataQualityStudio
         }
 
         private int HeaderRow => int.TryParse(_cboHeaderRow.SelectedItem as string, out var h) ? h : 1;
+
+        private void SetHeaderRow(int row)
+        {
+            _suppress = true;
+            _cboHeaderRow.SelectedItem = Math.Max(1, Math.Min(50, row)).ToString();
+            _suppress = false;
+        }
 
         // ============================== Mapping ==============================
 
@@ -918,6 +928,7 @@ namespace DataQualityStudio
                 _memory[copy.SourceColumn] = copy;
             }
             _preferredSheet = p.SheetName;
+            _preferredHeaderRow = Math.Max(1, p.HeaderRow);
             ClearResults();
 
             // Re-read the file if the profile points to another sheet or header row

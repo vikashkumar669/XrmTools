@@ -255,7 +255,8 @@ namespace DataQualityStudio.Services
 
         private static readonly string[] IsoDates = { "yyyy-M-d", "yyyy/M/d", "yyyy.M.d", "yyyyMMdd" };
         private static readonly string[] DayFirstDates = { "d/M/yyyy", "d-M-yyyy", "d.M.yyyy", "d/M/yy", "d-M-yy", "d.M.yy" };
-        private static readonly string[] MonthFirstDates = { "M/d/yyyy", "M-d-yyyy", "M.d.yyyy", "M/d/yy", "M-d-yy" };
+        // Dotted dates (12.05.1985) are day-first everywhere they are common, so they are never read month-first
+        private static readonly string[] MonthFirstDates = { "M/d/yyyy", "M-d-yyyy", "M/d/yy", "M-d-yy" };
         private static readonly string[] NamedMonthDates =
         {
             "d MMM yyyy", "d-MMM-yyyy", "d MMMM yyyy", "d-MMMM-yyyy", "d MMM yy", "d-MMM-yy", "d/MMM/yyyy",

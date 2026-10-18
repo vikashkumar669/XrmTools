@@ -165,7 +165,21 @@ On 18 Oct 2026, the validation engine, file readers and exporters were tested by
 | Profile save, clear and re-apply | Mappings, value maps and keys restored |
 | 50,000 rows × 13 mapped columns | Validated in about 3 s; Excel export in about 5 s |
 
-Test it against a live environment before relying on it for a production migration.
+### Live test in XrmToolBox (19 Oct 2026)
+Built in Visual Studio 2026 (Debug) and run in XrmToolBox 1.2026.9.78 against a Dataverse trial environment (**CS Trial**):
+
+| Scenario | Result |
+|---|---|
+| Build and install | Rebuild succeeded; the post-build step copied the DLL to the Plugins folder; the tool appears in *Tools* with its icon, version and author |
+| Open with the active connection | 1,934 tables loaded; Account: 126 importable columns, 1 required |
+| `Accounts migration sample.xlsx`, header row 2, table Account | 13 of 15 columns auto-mapped; 15 errors and 9 warnings in 2.0 s. Choice values come from the environment (Consulting = 7), and lookups were checked against real contacts. The sample's *Last Date Included in Campaign* is reported as not settable on create, which is correct for that column. |
+| `Contacts sample (semicolon).csv`, table Contact | 8 of 9 columns auto-mapped. The Company Name customer lookup was checked against both account and contact; `45.000,00` was read as 45000 |
+| Export to Excel | Opens in Excel without repair prompts, with all four sheets, colors, frozen headers and filters |
+| Save profile (Ctrl+S) | Saved to the profiles folder |
+
+Fixed after the live test: dotted dates (`12.05.1985`) are read as day-first instead of being flagged as ambiguous; short codes such as `M` now suggest *Male*; opening a new file resets the header row to 1 unless a profile says otherwise; the "closest column" hint for unmapped headers is stricter.
+
+Test it with your own data before relying on it for a production migration.
 
 ---
 
@@ -230,7 +244,7 @@ XrmTools/
 
 ## Release notes
 
-**1.2026.10.1**: first release
+**1.2026.10.1**: first release (tested live in XrmToolBox, see *Tested scenarios*)
 - Excel (`.xlsx`/`.xlsm`) and CSV input with sheet and header-row selection
 - Auto-mapping by display name, logical name, schema name, abbreviations and similarity
 - Validation of required columns, text, formats, numbers, dates, Yes/No, choices, status pairs, lookups and duplicate keys

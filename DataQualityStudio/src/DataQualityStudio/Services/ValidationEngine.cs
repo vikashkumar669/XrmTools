@@ -154,7 +154,7 @@ namespace DataQualityStudio.Services
                     var hasData = table.Rows.Any(r => !string.IsNullOrWhiteSpace(r.Get(i)));
                     AddMappingIssue(Severity.Info, header, null,
                         $"Column '{header}' isn't mapped and will be ignored{(hasData ? "" : " (it's empty)")}.",
-                        closest != null && score >= 0.5 ? $"Closest Dataverse column: {closest.ComboText}" : null, i);
+                        closest != null && score >= 0.65 ? $"Closest Dataverse column: {closest.ComboText}" : null, i);
                     continue;
                 }
 
@@ -532,8 +532,18 @@ namespace DataQualityStudio.Services
         {
             var guess = TextUtil.Closest(value, f.Options.SelectMany(o => o.AllLabels), 0.5, out _, true);
             var label = guess == null ? null : f.Options.First(o => o.AllLabels.Contains(guess)).Label;
+            if (label == null) label = UniquePrefixLabel(f, value);
             issue(Severity.Error, $"{TextUtil.Quote(value)} isn't a valid choice for {f.DisplayName}.",
                 label != null ? $"Did you mean '{label}'? Allowed: {AllowedList(f)}" : "Allowed: " + AllowedList(f), label);
+        }
+
+        /// <summary>Short codes such as "M" or "Fem" that start exactly one label ("Male", "Female").</summary>
+        private static string UniquePrefixLabel(DvField f, string value)
+        {
+            var v = TextUtil.Normalize(value);
+            if (v.Length == 0 || v.Length > 3) return null;
+            var matches = f.Options.Where(o => o.AllLabels.Any(l => TextUtil.Normalize(l).StartsWith(v, StringComparison.Ordinal))).ToList();
+            return matches.Count == 1 ? matches[0].Label : null;
         }
 
         private static string BooleanHint(DvField f)
