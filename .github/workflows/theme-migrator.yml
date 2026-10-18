@@ -107,7 +107,19 @@ jobs:
       - name: Push to nuget.org
         if: steps.release.outputs.publish == 'true'
         shell: pwsh
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        env:
+          NUGET_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        run: |
+          $pkg = (Get-ChildItem artifacts/*.nupkg | Select-Object -First 1).FullName
+          $out = dotnet nuget push $pkg --api-key $env:NUGET_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate 2>&1
+          $code = $LASTEXITCODE
+          $out | ForEach-Object { Write-Host $_ }
+          if ($code -ne 0) {
+            # Surface nuget.org's reason as annotations (visible without downloading logs)
+            $out | Where-Object { $_ -match 'error|Response status|forbidden|denied|invalid|400|401|403|409' } |
+              Select-Object -First 8 | ForEach-Object { Write-Host "::error title=nuget push::$_" }
+            exit $code
+          }
 
       - name: Create GitHub release
         if: steps.release.outputs.publish == 'true'
