@@ -72,7 +72,7 @@ The **Preview** tab shows every row as it would be imported: choices with their 
   - **Excel workbook (.xlsx)** with four sheets:
     - *Summary*: counts, options and the mapping
     - *Issues*
-    - *Data with fixes*: the original rows with every concrete correction applied (green), unresolved problems in red or amber, and a status and issue list per row
+    - *Data with fixes*: the original rows with every concrete correction applied (green) and unresolved problems in red or amber. A status column comes first and the row's issues are in the last column, so long issue text never runs over empty data cells
     - *Transformed preview*
   - **Issues as CSV**
   - **Data with suggested fixes as CSV**, ready to fix the rest and import

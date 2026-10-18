@@ -103,13 +103,16 @@ namespace DataQualityStudio.Services
             s == Severity.Error ? CellStyle.Error : s == Severity.Warning ? CellStyle.Warning : CellStyle.Info;
 
         private static double[] CorrectedWidths(SourceTable table) =>
-            new[] { 8d, 12d, 50d }.Concat(table.Headers.Select(h => Math.Max(12d, Math.Min(40d, h.Length + 4)))).ToArray();
+            new[] { 8d, 14d }.Concat(table.Headers.Select(h => Math.Max(12d, Math.Min(40d, h.Length + 4)))).Concat(new[] { 90d }).ToArray();
 
         /// <summary>The original rows with every concrete suggestion applied, colored by outcome.</summary>
         private static IEnumerable<IList<XCell>> CorrectedRows(SourceTable table, ValidationResult result)
         {
-            var header = new List<XCell> { XCell.Of("Row", CellStyle.Header), XCell.Of("DQ status", CellStyle.Header), XCell.Of("DQ issues", CellStyle.Header) };
+            // "DQ issues" is the last column: its long text can then only run into empty space on the right,
+            // never over an empty data cell (Excel lets text overflow into empty neighbouring cells)
+            var header = new List<XCell> { XCell.Of("Row", CellStyle.Header), XCell.Of("DQ status", CellStyle.Header) };
             header.AddRange(table.Headers.Select(h => XCell.Of(h, CellStyle.Header)));
+            header.Add(XCell.Of("DQ issues", CellStyle.Header));
             yield return header;
 
             var byRow = result.Issues.Where(i => i.RowIndex >= 0).GroupBy(i => i.RowIndex).ToDictionary(g => g.Key, g => g.ToList());
@@ -127,7 +130,6 @@ namespace DataQualityStudio.Services
                     ? XCell.Of(fixable ? "Fixed (review)" : "Error", fixable ? CellStyle.Corrected : CellStyle.Error)
                     : rowSev == (byte)Severity.Warning ? XCell.Of("Warning", CellStyle.Warning)
                     : XCell.Of("OK", CellStyle.Corrected));
-                cells.Add(XCell.Of(string.Join(" | ", issues.Select(i => $"{i.Column}: {i.Message}")), CellStyle.Normal));
 
                 for (int c = 0; c < table.Headers.Count; c++)
                 {
@@ -140,6 +142,7 @@ namespace DataQualityStudio.Services
                     if (fix != null) cells.Add(XCell.Of(fix.CorrectedValue, CellStyle.Corrected));
                     else cells.Add(XCell.Of(value, StyleFor(worst)));
                 }
+                cells.Add(XCell.Of(string.Join(" | ", issues.Select(i => $"{i.Column}: {i.Message}")), CellStyle.Normal));
                 yield return cells;
             }
         }
