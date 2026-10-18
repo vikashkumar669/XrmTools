@@ -21,7 +21,7 @@ In XrmToolBox, open **Tool Library**, search for the tool name and click **Insta
 ```
 
 ## Releasing a tool
-Each tool has a GitHub Actions workflow that builds and packs it on every change. Pushing a tag `<ToolName>-v<version>` publishes the package to nuget.org and creates a GitHub release. This needs the `NUGET_API_KEY` repository secret. Each tool's README has the full steps.
+Each tool has a GitHub Actions workflow that builds and packs it on every change. Pushing a tag `<ToolName>-v<version>` publishes the package to nuget.org through **Trusted Publishing**, so no API key is stored, and creates a GitHub release. Each tool needs a Trusted Publishing policy on nuget.org for its workflow file. Each tool's README has the full steps.
 
 ## License
 MIT, unless a tool's folder says otherwise.

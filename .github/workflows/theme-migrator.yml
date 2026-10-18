@@ -12,7 +12,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to create the GitHub release on tags
+  contents: write   # create the GitHub release on tags
+  id-token: write   # nuget.org Trusted Publishing (OIDC): no API key stored anywhere
 
 env:
   PROJECT: ThemeMigrator/src/ThemeMigrator/ThemeMigrator.csproj
@@ -74,14 +75,19 @@ jobs:
           name: ThemeMigrator-nupkg-${{ steps.version.outputs.version }}
           path: artifacts/*.nupkg
 
+      # nuget.org Trusted Publishing: exchanges GitHub's OIDC token for a one-hour API key.
+      # Policy on nuget.org: owner VikashKumar0491, repo vikashkumar669/XrmTools, workflow theme-migrator.yml
+      - name: NuGet login (Trusted Publishing)
+        if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: VikashKumar0491
+
       - name: Push to nuget.org
         if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')
         shell: pwsh
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) { throw 'Add the NUGET_API_KEY repository secret first.' }
-          dotnet nuget push "artifacts/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/ThemeMigrator-v')

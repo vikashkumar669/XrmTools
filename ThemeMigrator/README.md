@@ -96,20 +96,23 @@ The Tool Library is fed from **nuget.org**. The package must:
 `ThemeMigrator.nuspec` already does all three.
 
 ### Option A: GitHub Actions (recommended)
-1. **One time:** create a nuget.org API key (see below) and add it to the GitHub repo as the secret **`NUGET_API_KEY`**: *Settings → Secrets and variables → Actions → New repository secret*.
-2. Bump the version in **both** `src/ThemeMigrator/ThemeMigrator.csproj` and `src/ThemeMigrator/ThemeMigrator.nuspec`, using the format `1.YYYY.M.rev`, and update `<releaseNotes>`.
-3. Commit, then push a tag that matches the version:
+Publishing uses **nuget.org Trusted Publishing**: GitHub proves the workflow's identity to nuget.org, which issues a one-hour key for that run, so no API key is stored anywhere. The policy is already set up on nuget.org (*Account → Trusted Publishing*): owner `VikashKumar0491`, repository `vikashkumar669/XrmTools`, workflow `theme-migrator.yml`, limited to the `VikashKumar.XrmToolBox.ThemeMigrator` package.
+
+1. Bump the version in **both** `src/ThemeMigrator/ThemeMigrator.csproj` and `src/ThemeMigrator/ThemeMigrator.nuspec`, using the format `1.YYYY.M.rev`, and update `<releaseNotes>`.
+2. Commit, then push a tag that matches the version:
    ```bash
    git tag ThemeMigrator-v1.2026.10.1
    git push origin ThemeMigrator-v1.2026.10.1
    ```
-4. The **Theme Migrator** workflow then:
+3. The **Theme Migrator** workflow then:
    - builds the Release DLL,
    - checks that the csproj, nuspec and tag versions match,
-   - packs the `.nupkg` and pushes it to nuget.org,
+   - packs the `.nupkg`, logs in to nuget.org through Trusted Publishing and pushes it,
    - and attaches the package to a GitHub release.
 
 Every push to `main` that touches `ThemeMigrator/` also builds and packs, so a test `.nupkg` is always available under the workflow run's **Artifacts**.
+
+If you rename the workflow file or move the repo, update the Trusted Publishing policy on nuget.org to match.
 
 ### Option B: from your PC
 ```powershell
@@ -118,12 +121,7 @@ cd C:\XrmToolBox\ThemeMigrator
 .\build\pack.ps1 -Push -ApiKey <your-nuget-api-key> # build + pack + push
 ```
 
-### nuget.org API key (one time)
-On https://www.nuget.org go to **Account → API Keys → Create**:
-- **Scope:** *Push new packages and package versions*
-- **Glob pattern:** `VikashKumar.XrmToolBox.ThemeMigrator`
-
-Keep the key private. Store it only as the GitHub secret, or pass it to the script yourself.
+Option B needs a personal API key from **nuget.org → Account → API Keys** (scope *Push*, glob `VikashKumar.XrmToolBox.ThemeMigrator`). Since August 2026, nuget.org limits new keys to 30 days, so Option A is the better default. Keep any key private.
 
 ### Register the tool with XrmToolBox (one time, after the first push)
 1. Wait until the package shows as *listed* on nuget.org (validation usually takes 10–60 minutes).
