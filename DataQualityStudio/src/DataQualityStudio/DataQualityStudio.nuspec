@@ -4,7 +4,7 @@
     <!-- Package id must be unique on nuget.org; keep it stable once published -->
     <id>VikashKumar.XrmToolBox.DataQualityStudio</id>
     <!-- Keep in sync with <Version> in DataQualityStudio.csproj (format 1.YYYY.M.rev) -->
-    <version>1.2026.10.1</version>
+    <version>1.2026.10.2</version>
     <title>Data Quality Studio</title>
     <authors>Vikash Kumar</authors>
     <owners>vikashkumar669</owners>
@@ -17,7 +17,9 @@
     <readme>docs\README.md</readme>
     <description>Dataverse Excel Mapping &amp; Data Quality Studio: a configuration-driven import validator for teams working with Excel migration templates. Map Excel or CSV headers to Dataverse columns by display or logical name, validate required fields, data types, lengths, ranges, choices and lookups (checked against Dataverse in batches), preview the transformed values before importing, report unmapped columns without stopping, and export row-level errors with suggested corrections to Excel or CSV. Mappings are saved as reusable, shareable profiles.</description>
     <summary>Validate Excel/CSV migration files against Dataverse metadata before importing: mapping, required fields, types, choices, lookups, preview and corrected exports.</summary>
-    <releaseNotes>1.2026.10.1: First release.
+    <releaseNotes>1.2026.10.2: Republished so nuget.org serves the package icon as an image (required by the XrmToolBox Tool Library). No functional changes.
+
+1.2026.10.1: First release.
 - Excel (.xlsx/.xlsm) and CSV input with sheet and header-row selection
 - Auto-mapping by display name, logical name, schema name, abbreviations and similarity
 - Validation of required columns, text length and e-mail/URL formats, numbers, ranges and precision, dates, Yes/No, choices, multi-select choices, status/status reason pairs, lookups and duplicate keys
