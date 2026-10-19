@@ -9,7 +9,7 @@ Open an Excel or CSV file, map its columns to a Dataverse table, and find every 
 | | |
 |---|---|
 | **NuGet package** | `VikashKumar.XrmToolBox.DataQualityStudio` |
-| **Current version** | 1.2026.10.1 |
+| **Current version** | 1.2026.10.2 |
 | **Requires** | XrmToolBox 1.2025.10.74 or later (.NET Framework 4.8) |
 | **Author** | Vikash Kumar |
 | **License** | MIT |
@@ -243,6 +243,8 @@ XrmTools/
 ```
 
 ## Release notes
+
+**1.2026.10.2**: republished so nuget.org serves the package icon as an image, which the XrmToolBox Tool Library requires. No functional changes.
 
 **1.2026.10.1**: first release (tested live in XrmToolBox, see *Tested scenarios*)
 - Excel (`.xlsx`/`.xlsm`) and CSV input with sheet and header-row selection
