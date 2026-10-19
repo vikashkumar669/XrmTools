@@ -7,9 +7,9 @@
     <RootNamespace>DataQualityStudio</RootNamespace>
     <AssemblyName>DataQualityStudio</AssemblyName>
     <!-- XrmToolBox convention: 1.YYYY.M.revision. Keep in sync with DataQualityStudio.nuspec -->
-    <Version>1.2026.10.3</Version>
-    <AssemblyVersion>1.2026.10.3</AssemblyVersion>
-    <FileVersion>1.2026.10.3</FileVersion>
+    <Version>1.2026.10.4</Version>
+    <AssemblyVersion>1.2026.10.4</AssemblyVersion>
+    <FileVersion>1.2026.10.4</FileVersion>
     <Product>Data Quality Studio</Product>
     <Company>Vikash Kumar</Company>
     <Authors>Vikash Kumar</Authors>
