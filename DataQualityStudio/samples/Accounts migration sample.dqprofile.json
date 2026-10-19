@@ -1,0 +1,78 @@
+{
+  "Name": "Accounts migration sample",
+  "Description": "Sample profile for samples/Accounts migration sample.xlsx (header row 2, table account)",
+  "EntityLogicalName": "account",
+  "Mode": "Create",
+  "DateOrder": "Auto",
+  "NumberFormat": "Auto",
+  "TrimWhitespace": true,
+  "CheckLookups": true,
+  "SheetName": "Accounts",
+  "HeaderRow": 2,
+  "Mappings": [
+    {
+      "SourceColumn": "Account Name",
+      "TargetField": "name"
+    },
+    {
+      "SourceColumn": "Account Number",
+      "TargetField": "accountnumber",
+      "IsKey": true
+    },
+    {
+      "SourceColumn": "Main Phone",
+      "TargetField": "telephone1"
+    },
+    {
+      "SourceColumn": "Email",
+      "TargetField": "emailaddress1"
+    },
+    {
+      "SourceColumn": "Website",
+      "TargetField": "websiteurl"
+    },
+    {
+      "SourceColumn": "Industry",
+      "TargetField": "industrycode"
+    },
+    {
+      "SourceColumn": "Relationship Type",
+      "TargetField": "customertypecode"
+    },
+    {
+      "SourceColumn": "Credit Limit",
+      "TargetField": "creditlimit"
+    },
+    {
+      "SourceColumn": "No. of Employees",
+      "TargetField": "numberofemployees"
+    },
+    {
+      "SourceColumn": "Primary Contact",
+      "TargetField": "primarycontactid",
+      "LookupMatchField": "fullname"
+    },
+    {
+      "SourceColumn": "Credit Hold",
+      "TargetField": "creditonhold",
+      "ValueMap": "Y=Yes; N=No"
+    },
+    {
+      "SourceColumn": "Preferred Method of Contact",
+      "TargetField": "preferredcontactmethodcode"
+    },
+    {
+      "SourceColumn": "Last Date Included in Campaign",
+      "TargetField": "lastusedincampaign"
+    },
+    {
+      "SourceColumn": "Legacy ID"
+    },
+    {
+      "SourceColumn": "Sales Region"
+    }
+  ],
+  "SavedOn": "2026-10-19 02:00",
+  "SavedBy": "Vikash Kumar",
+  "ToolVersion": "1.2026.10.1"
+}

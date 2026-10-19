@@ -1,0 +1,134 @@
+name: Data Quality Studio
+
+# Builds and packs Data Quality Studio on every change. Publishes to nuget.org (Trusted Publishing)
+# and creates a GitHub release when:
+#   - a push to main carries a version that isn't on nuget.org yet (bump the version → release), or
+#   - a tag like "DataQualityStudio-v1.2026.10.1" is pushed.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'DataQualityStudio/**', '.github/workflows/data-quality-studio.yml' ]
+    tags: [ 'DataQualityStudio-v*' ]
+  pull_request:
+    paths: [ 'DataQualityStudio/**', '.github/workflows/data-quality-studio.yml' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the GitHub release on tags
+  id-token: write   # nuget.org Trusted Publishing (OIDC): no API key stored anywhere
+
+env:
+  PROJECT: DataQualityStudio/src/DataQualityStudio/DataQualityStudio.csproj
+  NUSPEC: DataQualityStudio/src/DataQualityStudio/DataQualityStudio.nuspec
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Check versions match
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$csproj = Get-Content $env:PROJECT
+          [xml]$spec   = Get-Content $env:NUSPEC
+          $projVersion = ($csproj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          $specVersion = $spec.package.metadata.version
+          if ($projVersion -ne $specVersion) { throw "Version mismatch: csproj=$projVersion, nuspec=$specVersion" }
+          if ($env:GITHUB_REF -like 'refs/tags/DataQualityStudio-v*') {
+            $tagVersion = $env:GITHUB_REF -replace '^refs/tags/DataQualityStudio-v', ''
+            if ($tagVersion -ne $specVersion) { throw "Tag version $tagVersion doesn't match package version $specVersion" }
+          }
+          "version=$specVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Data Quality Studio version $specVersion"
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.PROJECT }} -c Release -p:CopyToXrmToolBox=false
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          $projectDir = Split-Path $env:PROJECT
+          dotnet pack $env:PROJECT -c Release --no-build -o artifacts `
+            "-p:NuspecFile=$((Resolve-Path $env:NUSPEC).Path)" `
+            "-p:NuspecBasePath=$((Resolve-Path $projectDir).Path)"
+          Get-ChildItem artifacts
+
+      - name: Check package layout
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $pkg = Get-ChildItem artifacts/*.nupkg | Select-Object -First 1
+          $zip = [IO.Compression.ZipFile]::OpenRead($pkg.FullName)
+          $entries = $zip.Entries.FullName
+          $zip.Dispose()
+          $entries | ForEach-Object { Write-Host "  $_" }
+          foreach ($required in 'lib/net48/Plugins/DataQualityStudio.dll', 'images/icon.png', 'docs/README.md') {
+            if ($entries -notcontains $required) { throw "Package is missing $required" }
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DataQualityStudio-nupkg-${{ steps.version.outputs.version }}
+          path: artifacts/*.nupkg
+
+      - name: Decide whether to publish
+        id: release
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $publish = $false
+          if ($env:GITHUB_REF -like 'refs/tags/DataQualityStudio-v*') { $publish = $true }
+          elseif ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:GITHUB_REF -eq 'refs/heads/main') {
+            $id = 'vikashkumar.xrmtoolbox.dataqualitystudio'
+            try {
+              $published = (Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$id/index.json").versions
+            } catch { $published = @() }   # 404 until the first version exists
+            $publish = -not ($published -contains $version.ToLowerInvariant())
+            Write-Host "Already on nuget.org: $($published -join ', ')"
+          }
+          Write-Host "Publish $version : $publish"
+          "publish=$($publish.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      # nuget.org Trusted Publishing: exchanges GitHub's OIDC token for a one-hour API key.
+      # Policy on nuget.org: owner VikashKumar0491, repo vikashkumar669/XrmTools, workflow data-quality-studio.yml
+      - name: NuGet login (Trusted Publishing)
+        if: steps.release.outputs.publish == 'true'
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: VikashKumar0491
+
+      - name: Push to nuget.org
+        if: steps.release.outputs.publish == 'true'
+        shell: pwsh
+        env:
+          NUGET_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        run: |
+          $pkg = (Get-ChildItem artifacts/*.nupkg | Select-Object -First 1).FullName
+          $out = dotnet nuget push $pkg --api-key $env:NUGET_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate 2>&1
+          $code = $LASTEXITCODE
+          $out | ForEach-Object { Write-Host $_ }
+          if ($code -ne 0) {
+            # Surface nuget.org's reason as annotations (visible without downloading logs)
+            $out | Where-Object { $_ -match 'error|Response status|forbidden|denied|invalid|400|401|403|409' } |
+              Select-Object -First 8 | ForEach-Object { Write-Host "::error title=nuget push::$_" }
+            exit $code
+          }
+
+      - name: Create GitHub release
+        if: steps.release.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: DataQualityStudio-v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Data Quality Studio ${{ steps.version.outputs.version }}
+          files: artifacts/*.nupkg
+          body: |
+            Data Quality Studio ${{ steps.version.outputs.version }}, also available in XrmToolBox → Tool Library once nuget.org has indexed it.
+            See the [release notes](https://github.com/vikashkumar669/XrmTools/tree/main/DataQualityStudio#release-notes).
