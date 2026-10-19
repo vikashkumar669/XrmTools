@@ -4,7 +4,7 @@
     <!-- Package id must be unique on nuget.org; keep it stable once published -->
     <id>VikashKumar.XrmToolBox.DataQualityStudio</id>
     <!-- Keep in sync with <Version> in DataQualityStudio.csproj (format 1.YYYY.M.rev) -->
-    <version>1.2026.10.3</version>
+    <version>1.2026.10.4</version>
     <title>Data Quality Studio</title>
     <authors>Vikash Kumar</authors>
     <owners>vikashkumar669</owners>
@@ -12,12 +12,15 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/vikashkumar669/XrmTools/tree/main/DataQualityStudio</projectUrl>
     <repository type="git" url="https://github.com/vikashkumar669/XrmTools.git" branch="main" />
-    <icon>images\icon.png</icon>
+    <!-- Icon by URL only: GitHub serves it as image/png. When the icon is embedded, nuget.org sometimes stores it as
+         application/octet-stream, which the XrmToolBox portal rejects ("Logo Url is not valid"). -->
     <iconUrl>https://raw.githubusercontent.com/vikashkumar669/XrmTools/main/DataQualityStudio/src/DataQualityStudio/Resources/icon128.png</iconUrl>
     <readme>docs\README.md</readme>
     <description>Dataverse Excel Mapping &amp; Data Quality Studio: a configuration-driven import validator for teams working with Excel migration templates. Map Excel or CSV headers to Dataverse columns by display or logical name, validate required fields, data types, lengths, ranges, choices and lookups (checked against Dataverse in batches), preview the transformed values before importing, report unmapped columns without stopping, and export row-level errors with suggested corrections to Excel or CSV. Mappings are saved as reusable, shareable profiles.</description>
     <summary>Validate Excel/CSV migration files against Dataverse metadata before importing: mapping, required fields, types, choices, lookups, preview and corrected exports.</summary>
-    <releaseNotes>1.2026.10.3: Republished so nuget.org serves the package icon as image/png (required by the XrmToolBox Tool Library). No functional changes.
+    <releaseNotes>1.2026.10.4: The package icon is now referenced by URL (served by GitHub as image/png) so the XrmToolBox Tool Library accepts it. No functional changes.
+
+1.2026.10.3: Republished so nuget.org serves the package icon as image/png (required by the XrmToolBox Tool Library). No functional changes.
 
 1.2026.10.2: Republished for the same reason; nuget.org again stored the icon as application/octet-stream.
 
@@ -41,7 +44,6 @@
   </metadata>
   <files>
     <file src="bin\Release\net48\DataQualityStudio.dll" target="lib\net48\Plugins\DataQualityStudio.dll" />
-    <file src="Resources\icon128.png" target="images\icon.png" />
     <file src="..\..\README.md" target="docs\README.md" />
   </files>
 </package>

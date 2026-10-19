@@ -68,7 +68,7 @@ jobs:
           $entries = $zip.Entries.FullName
           $zip.Dispose()
           $entries | ForEach-Object { Write-Host "  $_" }
-          foreach ($required in 'lib/net48/Plugins/DataQualityStudio.dll', 'images/icon.png', 'docs/README.md') {
+          foreach ($required in 'lib/net48/Plugins/DataQualityStudio.dll', 'docs/README.md') {
             if ($entries -notcontains $required) { throw "Package is missing $required" }
           }
 
