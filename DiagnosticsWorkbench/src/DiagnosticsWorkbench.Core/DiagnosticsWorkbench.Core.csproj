@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Analysis core: plain C#, no XrmToolBox, Dataverse SDK or WinForms dependency, so it can be unit-tested anywhere.
+    The XrmToolBox plugin compiles these same source files into its own assembly (see DiagnosticsWorkbench.csproj),
+    so the tool still ships as a single DLL in the Plugins folder.
+  -->
+  <PropertyGroup>
+    <!-- net48 only on Windows (what the plugin ships on); net8.0 is added elsewhere so the tests can run without .NET Framework -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net48;net8.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>DiagnosticsWorkbench</RootNamespace>
+    <AssemblyName>DiagnosticsWorkbench.Core</AssemblyName>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+</Project>

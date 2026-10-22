@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Scenario plug-in used to test Diagnostics Workbench against real trace logs. NOT part of the shipped tool.
+    It does nothing unless account.description starts with "DWTEST:". See README.md in this folder.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>DiagnosticsWorkbench.TestPlugin</AssemblyName>
+    <RootNamespace>DiagnosticsWorkbench.TestPlugin</RootNamespace>
+    <Version>1.0.0.0</Version>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>TestPlugin.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.59" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

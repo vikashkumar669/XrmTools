@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Dependency-free test runner for the analysis core. Run: dotnet run (project folder tests/DiagnosticsWorkbench.Tests) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- .NET Framework 4.8 on Windows (always installed), .NET 8 elsewhere -->
+    <TargetFramework Condition="'$(OS)' == 'Windows_NT'">net48</TargetFramework>
+    <TargetFramework Condition="'$(OS)' != 'Windows_NT'">net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DiagnosticsWorkbench.Core\DiagnosticsWorkbench.Core.csproj" />
+  </ItemGroup>
+
+</Project>

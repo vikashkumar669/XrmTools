@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="5.3">
+    <!-- Package id must be unique on nuget.org; keep it stable once published -->
+    <id>VikashKumar.XrmToolBox.DiagnosticsWorkbench</id>
+    <!-- Keep in sync with <Version> in DiagnosticsWorkbench.csproj (format 1.YYYY.M.rev) -->
+    <version>1.2026.10.1</version>
+    <title>Dataverse Developer Diagnostics Workbench</title>
+    <authors>Vikash Kumar</authors>
+    <owners>vikashkumar669</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/vikashkumar669/XrmTools/tree/main/DiagnosticsWorkbench</projectUrl>
+    <repository type="git" url="https://github.com/vikashkumar669/XrmTools.git" branch="main" />
+    <!-- Icon by URL only (same as Data Quality Studio 1.2026.10.4): GitHub serves it as image/png. When the icon is embedded,
+         nuget.org sometimes stores it as application/octet-stream, which the XrmToolBox portal rejects ("Logo Url is not valid"). -->
+    <iconUrl>https://raw.githubusercontent.com/vikashkumar669/XrmTools/main/DiagnosticsWorkbench/src/DiagnosticsWorkbench/Resources/icon128.png</iconUrl>
+    <readme>docs\README.md</readme>
+    <description>Dataverse Developer Diagnostics Workbench turns plug-in trace logs into actionable diagnostics. Load logs by date range, table, message and plugin type, then review recurring errors grouped by a normalized exception fingerprint, slow executions against configurable thresholds, correlation chains rebuilt from correlation and request IDs, and step configuration flags (Update steps without filtering attributes, images that retrieve every column, possible recursion). Results show as colour-coded cards with a detail pane and "Copy as Markdown", and export to CSV or a self-contained HTML report (optionally redacted).</description>
+    <summary>Group recurring plug-in errors, spot slow steps, follow correlation chains and export diagnostic reports from Dataverse plug-in trace logs.</summary>
+    <releaseNotes>1.2026.10.1: First release.
+- Load plug-in trace logs by date range, table, message and plugin type (paged, with a row cap and cancel)
+- Trace setting check with a warning when logging is Off or Exception-only
+- Errors: recurring failures grouped by normalized exception fingerprint, with hits, executions, first/last seen and trend
+- Performance: p50/p95/max per plugin type and message, slow and near-timeout runs, per-type threshold overrides
+- Chains: logs linked by correlation ID, shown as an indented tree by depth
+- Step metadata: stage, rank, filtering attributes, images and assembly; configuration flags
+- Export to CSV (each view) and a self-contained HTML report, optionally redacted; Copy as Markdown
+- Settings and custom normalization rules saved per connection</releaseNotes>
+    <copyright>Copyright © Vikash Kumar 2026</copyright>
+    <!-- "XrmToolBox" must be the first tag for the tool to appear in the XrmToolBox Tool Library -->
+    <tags>XrmToolBox Diagnostics PluginTrace TraceLog Plugins Performance Errors Troubleshooting Dataverse Dynamics365 PowerApps</tags>
+    <dependencies>
+      <group targetFramework=".NETFramework4.8">
+        <!-- Host version marker required by the Tool Library -->
+        <dependency id="XrmToolBox" version="1.2025.10.74" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\net48\DiagnosticsWorkbench.dll" target="lib\net48\Plugins\DiagnosticsWorkbench.dll" />
+    <file src="..\..\README.md" target="docs\README.md" />
+  </files>
+</package>
