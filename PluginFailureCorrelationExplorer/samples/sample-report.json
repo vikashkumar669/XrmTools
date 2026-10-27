@@ -1,0 +1,1091 @@
+{
+  "schemaVersion": "1.0",
+  "tool": "Plugin Failure Correlation Explorer 1.2026.10.1 (sample, synthetic data)",
+  "generatedUtc": "2026-10-27T00:05:00Z",
+  "redacted": true,
+  "organization": {
+    "name": "contoso-uat",
+    "url": "https://contoso-uat.crm.dynamics.com",
+    "environmentId": "[GUID-1]",
+    "version": "9.2.26093.00150",
+    "traceSetting": "All"
+  },
+  "query": {
+    "fromUtc": "2026-10-26T00:00:00Z",
+    "toUtc": "2026-10-27T00:00:00Z",
+    "filters": "none",
+    "resultLimit": 5000,
+    "limitReached": false,
+    "retrievalNotes": []
+  },
+  "summary": {
+    "totalTraces": 436,
+    "tracesWithException": 38,
+    "uniqueFailureGroups": 5,
+    "recurringFailureGroups": 5,
+    "slowExecutions": 36,
+    "measuredExecutions": 433,
+    "completeEvidence": 424,
+    "incompleteEvidence": 12,
+    "missingIdentifiers": {
+      "correlationid": 12,
+      "performanceexecutionduration": 3,
+      "requestid": 12
+    }
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "ruleId": "PFC001",
+      "severity": "Error",
+      "confidence": "High",
+      "title": "Recurring failure: NullReferenceException in ContactSync",
+      "description": "The same failure fingerprint (8471ee8006b8254b) occurred 6 times. At least one occurrence was synchronous, so the user's operation was rolled back and an error was shown.",
+      "observedFacts": [
+        "Occurrences: 6, from 2026-10-26 05:00:00 UTC to 2026-10-26 13:05:00 UTC.",
+        "Exception: System.NullReferenceException (error code -2147220956).",
+        "Message: Object reference not set to an instance of an object.",
+        "Plug-in types: Contoso.Plugins.ContactSync. Messages: Update. Tables: contact.",
+        "Distinct request IDs: 6; distinct correlation IDs: 6.",
+        "Top user frames: Contoso.Plugins.ContactSync.ResolvePrimaryContact(Entity order) → Contoso.Plugins.ContactSync.Execute(IServiceProvider serviceProvider)"
+      ],
+      "calculatedMetrics": [
+        "Rate over its active span: 0.7/h."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Error code -2147220956 (0x80040224) usually means an unhandled exception escaped the plug-in code rather than being raised on purpose.",
+        "A NullReferenceException in plug-in code often means an expected attribute, image, lookup or context value was missing for this execution (for example, an attribute that isn't in Target on every Update)."
+      ],
+      "recommendedSteps": [
+        "Open the failure group and compare the original exception text and trace output of the first and latest occurrences.",
+        "Check whether the first occurrence lines up with a deployment, a configuration change or a data import.",
+        "Reproduce the failure in a non-production environment with the same message, table and input."
+      ],
+      "traceIds": [
+        "[GUID-2]",
+        "[GUID-3]",
+        "[GUID-4]",
+        "[GUID-5]",
+        "[GUID-6]",
+        "[GUID-7]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-002",
+      "ruleId": "PFC001",
+      "severity": "Error",
+      "confidence": "High",
+      "title": "Recurring failure: OrganizationServiceFault -2147204784 in AccountNumbering",
+      "description": "The same failure fingerprint (c1ea8a626f29a577) occurred 4 times. At least one occurrence was synchronous, so the user's operation was rolled back and an error was shown.",
+      "observedFacts": [
+        "Occurrences: 4, from 2026-10-26 13:40:03 UTC to 2026-10-26 13:49:01 UTC.",
+        "Exception: System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault] (error code -2147204784).",
+        "Message: Generic SQL error.",
+        "Plug-in types: Contoso.Plugins.AccountNumbering. Messages: Create. Tables: account.",
+        "Distinct request IDs: 4; distinct correlation IDs: 4."
+      ],
+      "calculatedMetrics": [
+        "Rate over its active span: 4.0/h."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Error code -2147204784 (0x80044150) is a generic SQL error. Deadlocks, lock timeouts and constraint violations are common causes, especially under concurrent load."
+      ],
+      "recommendedSteps": [
+        "Open the failure group and compare the original exception text and trace output of the first and latest occurrences.",
+        "Check whether the first occurrence lines up with a deployment, a configuration change or a data import.",
+        "Reproduce the failure in a non-production environment with the same message, table and input."
+      ],
+      "traceIds": [
+        "[GUID-8]",
+        "[GUID-9]",
+        "[GUID-10]",
+        "[GUID-11]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-003",
+      "ruleId": "PFC001",
+      "severity": "Error",
+      "confidence": "High",
+      "title": "Recurring failure: OrganizationServiceFault -2147220891 in AccountPreCreate",
+      "description": "The same failure fingerprint (ec05e779ac5d2ae5) occurred 18 times. At least one occurrence was synchronous, so the user's operation was rolled back and an error was shown.",
+      "observedFacts": [
+        "Occurrences: 18, from 2026-10-26 00:03:13 UTC to 2026-10-26 23:56:35 UTC.",
+        "Exception: System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault] (error code -2147220891).",
+        "Message: Account name is required for 'Fabrikam branch 100'.",
+        "Plug-in types: Contoso.Plugins.AccountPreCreate. Messages: Create. Tables: account.",
+        "Distinct request IDs: 18; distinct correlation IDs: 18."
+      ],
+      "calculatedMetrics": [
+        "Rate over its active span: 0.8/h."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Error code -2147220891 (0x80040265) is what Dataverse records when plug-in code throws InvalidPluginExecutionException on purpose. This often means a validation rule rejected the input, so check whether the input data or the rule changed."
+      ],
+      "recommendedSteps": [
+        "Open the failure group and compare the original exception text and trace output of the first and latest occurrences.",
+        "Check whether the first occurrence lines up with a deployment, a configuration change or a data import.",
+        "Reproduce the failure in a non-production environment with the same message, table and input."
+      ],
+      "traceIds": [
+        "[GUID-12]",
+        "[GUID-13]",
+        "[GUID-14]",
+        "[GUID-15]",
+        "[GUID-16]",
+        "[GUID-17]",
+        "[GUID-18]",
+        "[GUID-19]",
+        "[GUID-20]",
+        "[GUID-21]",
+        "[GUID-22]",
+        "[GUID-23]",
+        "[GUID-24]",
+        "[GUID-25]",
+        "[GUID-26]",
+        "[GUID-27]",
+        "[GUID-28]",
+        "[GUID-29]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-004",
+      "ruleId": "PFC001",
+      "severity": "Error",
+      "confidence": "High",
+      "title": "Recurring failure: OrganizationServiceFault -2147220891 in OrderSubmit",
+      "description": "The same failure fingerprint (080707adeb361790) occurred 6 times. At least one occurrence was synchronous, so the user's operation was rolled back and an error was shown.",
+      "observedFacts": [
+        "Occurrences: 6, from 2026-10-26 05:00:00 UTC to 2026-10-26 13:05:00 UTC.",
+        "Exception: System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault] (error code -2147220891).",
+        "Message: ContactSync failed: Object reference not set to an instance of an object.",
+        "Plug-in types: Contoso.Plugins.OrderSubmit. Messages: Create. Tables: salesorder.",
+        "Distinct request IDs: 6; distinct correlation IDs: 6."
+      ],
+      "calculatedMetrics": [
+        "Rate over its active span: 0.7/h."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Error code -2147220891 (0x80040265) is what Dataverse records when plug-in code throws InvalidPluginExecutionException on purpose. This often means a validation rule rejected the input, so check whether the input data or the rule changed."
+      ],
+      "recommendedSteps": [
+        "Open the failure group and compare the original exception text and trace output of the first and latest occurrences.",
+        "Check whether the first occurrence lines up with a deployment, a configuration change or a data import.",
+        "Reproduce the failure in a non-production environment with the same message, table and input."
+      ],
+      "traceIds": [
+        "[GUID-30]",
+        "[GUID-31]",
+        "[GUID-32]",
+        "[GUID-33]",
+        "[GUID-34]",
+        "[GUID-35]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-005",
+      "ruleId": "PFC003",
+      "severity": "Error",
+      "confidence": "High",
+      "title": "Slow sync execution: PriceCalculator on Update",
+      "description": "5 of 5 measured executions took at least the sync threshold of 2,000 ms. 2 came within reach of the 2-minute synchronous timeout.",
+      "observedFacts": [
+        "Plug-in type: Contoso.Plugins.PriceCalculator; message: Update; mode: Sync; tables: quote.",
+        "Slowest execution: 112,500 ms. Executions in group: 5, with a duration: 5."
+      ],
+      "calculatedMetrics": [
+        "Share at or above the threshold: 100%.",
+        "Average 45,020 ms, median 3,100 ms.",
+        "Note: sample of 5 is below 20: 95th percentile not reported."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Common causes of slow steps include external HTTP calls, retrieving many records or columns, per-record queries in a loop, and lock contention with concurrent operations. The traces alone don't show which applies.",
+        "Synchronous steps add their duration to the user's save time; work that doesn't need to block the user could move to an asynchronous step."
+      ],
+      "recommendedSteps": [
+        "Read the trace output of the slowest executions for timing markers, and add timing traces around external calls and queries if there are none.",
+        "Check whether the slow executions cluster at certain times (bulk jobs, integrations) or are spread evenly.",
+        "Prioritise this step: synchronous executions over 2 minutes are cancelled by the platform."
+      ],
+      "traceIds": [
+        "[GUID-36]",
+        "[GUID-37]",
+        "[GUID-38]",
+        "[GUID-39]",
+        "[GUID-40]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-006",
+      "ruleId": "PFC001",
+      "severity": "Warning",
+      "confidence": "High",
+      "title": "Recurring failure: KeyNotFoundException in OpportunityRollup",
+      "description": "The same failure fingerprint (48072af3c086d512) occurred 4 times. All occurrences were asynchronous, so users may not see the error directly.",
+      "observedFacts": [
+        "Occurrences: 4, from 2026-10-26 07:56:47 UTC to 2026-10-26 19:25:50 UTC.",
+        "Exception: System.Collections.Generic.KeyNotFoundException.",
+        "Message: The given key was not present in the dictionary.",
+        "Plug-in types: Contoso.Plugins.OpportunityRollup. Messages: Update. Tables: opportunity.",
+        "Distinct request IDs: 4; distinct correlation IDs: 4.",
+        "Top user frames: Contoso.Plugins.OpportunityRollup.SumLines(Entity target) → Contoso.Plugins.OpportunityRollup.Execute(IServiceProvider serviceProvider)"
+      ],
+      "calculatedMetrics": [
+        "Rate over its active span: 0.3/h."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "\"The given key was not present\" usually means the code read an attribute with entity[\"name\"] when the attribute wasn't in Target or the image. Using GetAttributeValue or checking Contains avoids this."
+      ],
+      "recommendedSteps": [
+        "Open the failure group and compare the original exception text and trace output of the first and latest occurrences.",
+        "Check whether the first occurrence lines up with a deployment, a configuration change or a data import.",
+        "Reproduce the failure in a non-production environment with the same message, table and input."
+      ],
+      "traceIds": [
+        "[GUID-41]",
+        "[GUID-42]",
+        "[GUID-43]",
+        "[GUID-44]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-007",
+      "ruleId": "PFC003",
+      "severity": "Warning",
+      "confidence": "High",
+      "title": "Slow async execution: InvoiceExport on Create",
+      "description": "28 of 30 measured executions took at least the async threshold of 10,000 ms.",
+      "observedFacts": [
+        "Plug-in type: Contoso.Plugins.InvoiceExport; message: Create; mode: Async; tables: invoice.",
+        "Slowest execution: 24,746 ms. Executions in group: 30, with a duration: 30."
+      ],
+      "calculatedMetrics": [
+        "Share at or above the threshold: 93%.",
+        "Average 17,840 ms, median 17,919 ms, 95th percentile 24,168 ms (nearest rank)."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Common causes of slow steps include external HTTP calls, retrieving many records or columns, per-record queries in a loop, and lock contention with concurrent operations. The traces alone don't show which applies."
+      ],
+      "recommendedSteps": [
+        "Read the trace output of the slowest executions for timing markers, and add timing traces around external calls and queries if there are none.",
+        "Check whether the slow executions cluster at certain times (bulk jobs, integrations) or are spread evenly."
+      ],
+      "traceIds": [
+        "[GUID-45]",
+        "[GUID-46]",
+        "[GUID-47]",
+        "[GUID-48]",
+        "[GUID-49]",
+        "[GUID-50]",
+        "[GUID-51]",
+        "[GUID-52]",
+        "[GUID-53]",
+        "[GUID-54]",
+        "[GUID-55]",
+        "[GUID-56]",
+        "[GUID-57]",
+        "[GUID-58]",
+        "[GUID-59]",
+        "[GUID-60]",
+        "[GUID-61]",
+        "[GUID-62]",
+        "[GUID-63]",
+        "[GUID-64]",
+        "[GUID-65]",
+        "[GUID-66]",
+        "[GUID-67]",
+        "[GUID-68]",
+        "[GUID-69]"
+      ],
+      "additionalTraceCount": 3
+    },
+    {
+      "id": "F-008",
+      "ruleId": "PFC003",
+      "severity": "Warning",
+      "confidence": "High",
+      "title": "Slow sync execution: AccountNumbering on Create",
+      "description": "3 of 4 measured executions took at least the sync threshold of 2,000 ms.",
+      "observedFacts": [
+        "Plug-in type: Contoso.Plugins.AccountNumbering; message: Create; mode: Sync; tables: account.",
+        "Slowest execution: 3,708 ms. Executions in group: 4, with a duration: 4."
+      ],
+      "calculatedMetrics": [
+        "Share at or above the threshold: 75%.",
+        "Note: sample of 4 is below 5: average and median not reported."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Common causes of slow steps include external HTTP calls, retrieving many records or columns, per-record queries in a loop, and lock contention with concurrent operations. The traces alone don't show which applies.",
+        "Synchronous steps add their duration to the user's save time; work that doesn't need to block the user could move to an asynchronous step."
+      ],
+      "recommendedSteps": [
+        "Read the trace output of the slowest executions for timing markers, and add timing traces around external calls and queries if there are none.",
+        "Check whether the slow executions cluster at certain times (bulk jobs, integrations) or are spread evenly."
+      ],
+      "traceIds": [
+        "[GUID-9]",
+        "[GUID-11]",
+        "[GUID-10]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-009",
+      "ruleId": "PFC006",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "Increasing failure pattern: OrganizationServiceFault -2147220891 in AccountPreCreate",
+      "description": "Failure group ec05e779ac5d2ae5 rose from 0.3/h to 0.8/h.",
+      "observedFacts": [
+        "Current period: 18 occurrences. Baseline: 6 occurrences.",
+        "Baseline: previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception."
+      ],
+      "calculatedMetrics": [
+        "Hourly rate: current 0.8/h, baseline 0.3/h (3.0×).",
+        "Caveat: Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "A new or increasing pattern often follows a deployment, a configuration change, a new integration or a change in data. The comparison shows when, not why."
+      ],
+      "recommendedSteps": [
+        "Compare the time of the first occurrence with recent deployments and configuration changes.",
+        "Open the failure group to inspect the original exception text."
+      ],
+      "traceIds": [
+        "[GUID-12]",
+        "[GUID-13]",
+        "[GUID-14]",
+        "[GUID-15]",
+        "[GUID-16]",
+        "[GUID-17]",
+        "[GUID-18]",
+        "[GUID-19]",
+        "[GUID-20]",
+        "[GUID-21]",
+        "[GUID-22]",
+        "[GUID-23]",
+        "[GUID-24]",
+        "[GUID-25]",
+        "[GUID-26]",
+        "[GUID-27]",
+        "[GUID-28]",
+        "[GUID-29]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-010",
+      "ruleId": "PFC006",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "New failure pattern: NullReferenceException in ContactSync",
+      "description": "Failure group 8471ee8006b8254b occurred 6 times in the current period and not at all in the baseline.",
+      "observedFacts": [
+        "Current period: 6 occurrences. Baseline: 0 occurrences.",
+        "Baseline: previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception."
+      ],
+      "calculatedMetrics": [
+        "Hourly rate: current 0.2/h, baseline 0.0/h.",
+        "Caveat: Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "A new or increasing pattern often follows a deployment, a configuration change, a new integration or a change in data. The comparison shows when, not why."
+      ],
+      "recommendedSteps": [
+        "Compare the time of the first occurrence with recent deployments and configuration changes.",
+        "Open the failure group to inspect the original exception text."
+      ],
+      "traceIds": [
+        "[GUID-2]",
+        "[GUID-3]",
+        "[GUID-4]",
+        "[GUID-5]",
+        "[GUID-6]",
+        "[GUID-7]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-011",
+      "ruleId": "PFC006",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "New failure pattern: OrganizationServiceFault -2147204784 in AccountNumbering",
+      "description": "Failure group c1ea8a626f29a577 occurred 4 times in the current period and not at all in the baseline.",
+      "observedFacts": [
+        "Current period: 4 occurrences. Baseline: 0 occurrences.",
+        "Baseline: previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception."
+      ],
+      "calculatedMetrics": [
+        "Hourly rate: current 0.2/h, baseline 0.0/h.",
+        "Caveat: Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "A new or increasing pattern often follows a deployment, a configuration change, a new integration or a change in data. The comparison shows when, not why."
+      ],
+      "recommendedSteps": [
+        "Compare the time of the first occurrence with recent deployments and configuration changes.",
+        "Open the failure group to inspect the original exception text."
+      ],
+      "traceIds": [
+        "[GUID-8]",
+        "[GUID-9]",
+        "[GUID-10]",
+        "[GUID-11]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-012",
+      "ruleId": "PFC006",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "New failure pattern: OrganizationServiceFault -2147220891 in OrderSubmit",
+      "description": "Failure group 080707adeb361790 occurred 6 times in the current period and not at all in the baseline.",
+      "observedFacts": [
+        "Current period: 6 occurrences. Baseline: 0 occurrences.",
+        "Baseline: previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception."
+      ],
+      "calculatedMetrics": [
+        "Hourly rate: current 0.2/h, baseline 0.0/h.",
+        "Caveat: Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "A new or increasing pattern often follows a deployment, a configuration change, a new integration or a change in data. The comparison shows when, not why."
+      ],
+      "recommendedSteps": [
+        "Compare the time of the first occurrence with recent deployments and configuration changes.",
+        "Open the failure group to inspect the original exception text."
+      ],
+      "traceIds": [
+        "[GUID-30]",
+        "[GUID-31]",
+        "[GUID-32]",
+        "[GUID-33]",
+        "[GUID-34]",
+        "[GUID-35]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-013",
+      "ruleId": "PFC007",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "Possible performance regression: InvoiceExport · Create (Async)",
+      "description": "The median duration rose from 4,618 ms to 17,919 ms (3.9×).",
+      "observedFacts": [
+        "Executions measured: current 30, baseline 30.",
+        "Baseline: previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception."
+      ],
+      "calculatedMetrics": [
+        "Median ratio: 3.9× (configured regression ratio 1.5×).",
+        "Caveat: Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "A slower median can come from a code change, more data being processed per execution, a slower external dependency or higher concurrent load."
+      ],
+      "recommendedSteps": [
+        "Compare the step's assembly version and the trace output between a fast baseline execution and a slow current one."
+      ],
+      "traceIds": [
+        "[GUID-45]",
+        "[GUID-46]",
+        "[GUID-47]",
+        "[GUID-48]",
+        "[GUID-49]",
+        "[GUID-50]",
+        "[GUID-51]",
+        "[GUID-52]",
+        "[GUID-53]",
+        "[GUID-54]",
+        "[GUID-55]",
+        "[GUID-56]",
+        "[GUID-57]",
+        "[GUID-58]",
+        "[GUID-59]",
+        "[GUID-60]",
+        "[GUID-61]",
+        "[GUID-62]",
+        "[GUID-63]",
+        "[GUID-64]",
+        "[GUID-65]",
+        "[GUID-66]",
+        "[GUID-67]",
+        "[GUID-68]",
+        "[GUID-69]"
+      ],
+      "additionalTraceCount": 3
+    },
+    {
+      "id": "F-014",
+      "ruleId": "PFC008",
+      "severity": "Warning",
+      "confidence": "Medium",
+      "title": "Failures propagating through 6 causal chains: OrderSubmit (depth 1) → ContactSync (depth 2)",
+      "description": "6 correlation IDs each link failures from OrderSubmit (depth 1) → ContactSync (depth 2), between 2026-10-26 05:00:00 UTC and 2026-10-26 13:05:00 UTC.",
+      "observedFacts": [
+        "Chains with this shape: 6; failed traces in them: 12; all traces in them: 12.",
+        "Example correlation IDs: [GUID-70], [GUID-71], [GUID-72] and 3 more."
+      ],
+      "calculatedMetrics": [],
+      "correlationEvidence": [
+        "[Same causal chain (correlation ID)] The failures in each chain share a correlation ID. This proves they belong to one causal chain, not that they are the same immediate operation.",
+        "[Suspected parent/child] In 6 chains, OrderSubmit (depth 1) → ContactSync (depth 2); signals: same correlation ID, depth differs by one, runs inside the other's execution window."
+      ],
+      "possibleExplanations": [
+        "A failure in a nested (deeper) synchronous step propagates to the step that triggered it, so one underlying failure can appear as several exceptions in one chain. Start with the deepest failure."
+      ],
+      "recommendedSteps": [
+        "Open one of the chains in the Trace explorer (Chain ◀ ▶) and read the failures in order of depth and start time.",
+        "Check whether the deepest failure's message appears inside the shallower failures' messages."
+      ],
+      "traceIds": [
+        "[GUID-35]",
+        "[GUID-7]",
+        "[GUID-34]",
+        "[GUID-6]",
+        "[GUID-33]",
+        "[GUID-5]",
+        "[GUID-32]",
+        "[GUID-4]",
+        "[GUID-31]",
+        "[GUID-3]",
+        "[GUID-30]",
+        "[GUID-2]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-015",
+      "ruleId": "PFC009",
+      "severity": "Warning",
+      "confidence": "Low",
+      "title": "Suspected recursion: AccountHierarchy on Update at depths 1, 2, 3, 4",
+      "description": "Within correlation ID [GUID-73], Contoso.Plugins.AccountHierarchy ran for Update at 4 depths.",
+      "observedFacts": [
+        "Executions in the chain: 4; depths: 1, 2, 3, 4; failures: 0."
+      ],
+      "calculatedMetrics": [],
+      "correlationEvidence": [
+        "[Same causal chain (correlation ID)] Same correlation ID [GUID-73]."
+      ],
+      "possibleExplanations": [
+        "A step that updates the record it is registered on (or a related record that triggers it back) re-triggers itself. Dataverse stops such loops at depth 8 with an error.",
+        "This can also be legitimate: a hierarchy update that cascades to child records runs the same step at increasing depths."
+      ],
+      "recommendedSteps": [
+        "Check whether the step updates attributes that are in its own filtering attributes, and whether it guards with context.Depth."
+      ],
+      "traceIds": [
+        "[GUID-74]",
+        "[GUID-75]",
+        "[GUID-76]",
+        "[GUID-77]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-016",
+      "ruleId": "PFC004",
+      "severity": "Information",
+      "confidence": "High",
+      "title": "Failures concentrated on Create of account",
+      "description": "22 of 282 retrieved traces for Create on account recorded an exception, across 2 failure groups and 2 plug-in types.",
+      "observedFacts": [
+        "Failed traces: 22; all traces for this message and table: 282.",
+        "Plug-in types with failures: AccountPreCreate, AccountNumbering."
+      ],
+      "calculatedMetrics": [
+        "Failure share of retrieved traces: 8%."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Several distinct failures on the same message and table can point to a shared input, such as a particular data pattern or a related customization, rather than to one plug-in defect."
+      ],
+      "recommendedSteps": [
+        "List every step registered on Create of account and check their order (stage and rank) and filtering attributes.",
+        "Compare the input data of failing and succeeding executions, if trace output records it."
+      ],
+      "traceIds": [
+        "[GUID-12]",
+        "[GUID-13]",
+        "[GUID-14]",
+        "[GUID-15]",
+        "[GUID-16]",
+        "[GUID-17]",
+        "[GUID-18]",
+        "[GUID-19]",
+        "[GUID-8]",
+        "[GUID-9]",
+        "[GUID-10]",
+        "[GUID-11]",
+        "[GUID-20]",
+        "[GUID-21]",
+        "[GUID-22]",
+        "[GUID-23]",
+        "[GUID-24]",
+        "[GUID-25]",
+        "[GUID-26]",
+        "[GUID-27]",
+        "[GUID-28]",
+        "[GUID-29]"
+      ],
+      "additionalTraceCount": 0
+    },
+    {
+      "id": "F-017",
+      "ruleId": "PFC005",
+      "severity": "Information",
+      "confidence": "High",
+      "title": "Some traces are missing diagnostic identifiers",
+      "description": "12 of 436 traces lack at least one identifier used by the analysis. Correlation and performance results for those traces are limited.",
+      "observedFacts": [
+        "Missing correlationid: 12 traces (3%).",
+        "Missing requestid: 12 traces (3%).",
+        "Missing performanceexecutionduration: 3 traces (1%)."
+      ],
+      "calculatedMetrics": [
+        "Failed traces without a correlation ID: 0 of 38. Only heuristic correlation is possible for these."
+      ],
+      "correlationEvidence": [],
+      "possibleExplanations": [
+        "Some executions (for example certain system or workflow activity traces) don't record every identifier. Durations are missing when the execution didn't complete normally."
+      ],
+      "recommendedSteps": [
+        "Treat correlations for these traces as heuristic leads only.",
+        "Write the identifiers you need into the trace output (ITracingService) so they appear in the message block."
+      ],
+      "traceIds": [
+        "[GUID-78]",
+        "[GUID-79]",
+        "[GUID-80]",
+        "[GUID-81]",
+        "[GUID-82]",
+        "[GUID-83]",
+        "[GUID-84]",
+        "[GUID-85]",
+        "[GUID-86]",
+        "[GUID-87]",
+        "[GUID-88]",
+        "[GUID-89]"
+      ],
+      "additionalTraceCount": 0
+    }
+  ],
+  "failureGroups": [
+    {
+      "fingerprint": "ec05e779ac5d2ae5",
+      "severity": "Error",
+      "exceptionType": "System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault]",
+      "errorCode": "-2147220891",
+      "message": "Account name is required for 'Fabrikam branch 100'.",
+      "normalizedMessage": "account name is required for \u003cstr\u003e.",
+      "occurrences": 18,
+      "firstUtc": "2026-10-26T00:03:13Z",
+      "latestUtc": "2026-10-26T23:56:35Z",
+      "pluginTypes": [
+        "Contoso.Plugins.AccountPreCreate"
+      ],
+      "messages": [
+        "Create"
+      ],
+      "tables": [
+        "account"
+      ],
+      "distinctRequests": 18,
+      "distinctCorrelations": 18
+    },
+    {
+      "fingerprint": "080707adeb361790",
+      "severity": "Error",
+      "exceptionType": "System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault]",
+      "errorCode": "-2147220891",
+      "message": "ContactSync failed: Object reference not set to an instance of an object.",
+      "normalizedMessage": "contactsync failed: object reference not set to an instance of an object.",
+      "occurrences": 6,
+      "firstUtc": "2026-10-26T05:00:00Z",
+      "latestUtc": "2026-10-26T13:05:00Z",
+      "pluginTypes": [
+        "Contoso.Plugins.OrderSubmit"
+      ],
+      "messages": [
+        "Create"
+      ],
+      "tables": [
+        "salesorder"
+      ],
+      "distinctRequests": 6,
+      "distinctCorrelations": 6
+    },
+    {
+      "fingerprint": "8471ee8006b8254b",
+      "severity": "Error",
+      "exceptionType": "System.NullReferenceException",
+      "errorCode": "-2147220956",
+      "message": "Object reference not set to an instance of an object.",
+      "normalizedMessage": "object reference not set to an instance of an object.",
+      "occurrences": 6,
+      "firstUtc": "2026-10-26T05:00:00Z",
+      "latestUtc": "2026-10-26T13:05:00Z",
+      "pluginTypes": [
+        "Contoso.Plugins.ContactSync"
+      ],
+      "messages": [
+        "Update"
+      ],
+      "tables": [
+        "contact"
+      ],
+      "distinctRequests": 6,
+      "distinctCorrelations": 6
+    },
+    {
+      "fingerprint": "48072af3c086d512",
+      "severity": "Warning",
+      "exceptionType": "System.Collections.Generic.KeyNotFoundException",
+      "errorCode": null,
+      "message": "The given key was not present in the dictionary.",
+      "normalizedMessage": "the given key was not present in the dictionary.",
+      "occurrences": 4,
+      "firstUtc": "2026-10-26T07:56:47Z",
+      "latestUtc": "2026-10-26T19:25:50Z",
+      "pluginTypes": [
+        "Contoso.Plugins.OpportunityRollup"
+      ],
+      "messages": [
+        "Update"
+      ],
+      "tables": [
+        "opportunity"
+      ],
+      "distinctRequests": 4,
+      "distinctCorrelations": 4
+    },
+    {
+      "fingerprint": "c1ea8a626f29a577",
+      "severity": "Error",
+      "exceptionType": "System.ServiceModel.FaultException`1[Microsoft.Xrm.Sdk.OrganizationServiceFault]",
+      "errorCode": "-2147204784",
+      "message": "Generic SQL error.",
+      "normalizedMessage": "generic sql error.",
+      "occurrences": 4,
+      "firstUtc": "2026-10-26T13:40:03Z",
+      "latestUtc": "2026-10-26T13:49:01Z",
+      "pluginTypes": [
+        "Contoso.Plugins.AccountNumbering"
+      ],
+      "messages": [
+        "Create"
+      ],
+      "tables": [
+        "account"
+      ],
+      "distinctRequests": 4,
+      "distinctCorrelations": 4
+    }
+  ],
+  "performance": [
+    {
+      "pluginType": "Contoso.Plugins.PriceCalculator",
+      "message": "Update",
+      "mode": "Sync",
+      "executions": 5,
+      "measured": 5,
+      "thresholdMs": 2000,
+      "slow": 5,
+      "nearTimeout": 2,
+      "averageMs": 45020,
+      "medianMs": 3100,
+      "p95Ms": null,
+      "maxMs": 112500,
+      "sampleNote": "sample of 5 is below 20: 95th percentile not reported"
+    },
+    {
+      "pluginType": "Contoso.Plugins.InvoiceExport",
+      "message": "Create",
+      "mode": "Async",
+      "executions": 30,
+      "measured": 30,
+      "thresholdMs": 10000,
+      "slow": 28,
+      "nearTimeout": 0,
+      "averageMs": 17840.167,
+      "medianMs": 17919,
+      "p95Ms": 24168,
+      "maxMs": 24746,
+      "sampleNote": ""
+    },
+    {
+      "pluginType": "Contoso.Plugins.AccountNumbering",
+      "message": "Create",
+      "mode": "Sync",
+      "executions": 4,
+      "measured": 4,
+      "thresholdMs": 2000,
+      "slow": 3,
+      "nearTimeout": 0,
+      "averageMs": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "maxMs": 3708,
+      "sampleNote": "sample of 4 is below 5: average and median not reported"
+    },
+    {
+      "pluginType": "Contoso.Plugins.OrderSubmit",
+      "message": "Create",
+      "mode": "Sync",
+      "executions": 6,
+      "measured": 6,
+      "thresholdMs": 2000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": 900,
+      "medianMs": 900,
+      "p95Ms": null,
+      "maxMs": 900,
+      "sampleNote": "sample of 6 is below 20: 95th percentile not reported"
+    },
+    {
+      "pluginType": "Contoso.Plugins.ContactSync",
+      "message": "Update",
+      "mode": "Sync",
+      "executions": 93,
+      "measured": 93,
+      "thresholdMs": 2000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": 460.871,
+      "medianMs": 428,
+      "p95Ms": 884,
+      "maxMs": 899,
+      "sampleNote": ""
+    },
+    {
+      "pluginType": "Contoso.Plugins.AccountHierarchy",
+      "message": "Update",
+      "mode": "Sync",
+      "executions": 4,
+      "measured": 4,
+      "thresholdMs": 2000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "maxMs": 800,
+      "sampleNote": "sample of 4 is below 5: average and median not reported"
+    },
+    {
+      "pluginType": "Contoso.Plugins.OpportunityRollup",
+      "message": "Update",
+      "mode": "Async",
+      "executions": 4,
+      "measured": 4,
+      "thresholdMs": 10000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": null,
+      "medianMs": null,
+      "p95Ms": null,
+      "maxMs": 499,
+      "sampleNote": "sample of 4 is below 5: average and median not reported"
+    },
+    {
+      "pluginType": "Contoso.Plugins.AccountPreCreate",
+      "message": "Create",
+      "mode": "Sync",
+      "executions": 278,
+      "measured": 278,
+      "thresholdMs": 2000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": 205.227,
+      "medianMs": 198,
+      "p95Ms": 386,
+      "maxMs": 399,
+      "sampleNote": ""
+    },
+    {
+      "pluginType": "Contoso.Workflows.SendWelcome",
+      "message": "Create",
+      "mode": "Async",
+      "executions": 12,
+      "measured": 9,
+      "thresholdMs": 10000,
+      "slow": 0,
+      "nearTimeout": 0,
+      "averageMs": 159.667,
+      "medianMs": 160,
+      "p95Ms": null,
+      "maxMs": 271,
+      "sampleNote": "sample of 9 is below 20: 95th percentile not reported"
+    }
+  ],
+  "correlationChains": [
+    {
+      "correlationId": "[GUID-70]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    },
+    {
+      "correlationId": "[GUID-71]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    },
+    {
+      "correlationId": "[GUID-72]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    },
+    {
+      "correlationId": "[GUID-90]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    },
+    {
+      "correlationId": "[GUID-91]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    },
+    {
+      "correlationId": "[GUID-92]",
+      "evidenceLevel": "Same causal chain (correlation ID)",
+      "traces": 2,
+      "failures": 2,
+      "distinctRequests": 2,
+      "suspectedParentChildLinks": 1
+    }
+  ],
+  "trend": {
+    "available": true,
+    "unavailableReason": null,
+    "baseline": "previous period: 2026-10-25 00:00 → 2026-10-25 23:59 UTC, 399 traces, 10 with exception",
+    "caveats": [
+      "Rates are compared per hour of each period. A change in usage volume between the periods changes failure counts too."
+    ],
+    "failures": [
+      {
+        "fingerprint": "080707adeb361790",
+        "label": "OrganizationServiceFault -2147220891 in OrderSubmit",
+        "status": "New",
+        "current": 6,
+        "baseline": 0,
+        "currentPerHour": 0.25,
+        "baselinePerHour": 0
+      },
+      {
+        "fingerprint": "8471ee8006b8254b",
+        "label": "NullReferenceException in ContactSync",
+        "status": "New",
+        "current": 6,
+        "baseline": 0,
+        "currentPerHour": 0.25,
+        "baselinePerHour": 0
+      },
+      {
+        "fingerprint": "c1ea8a626f29a577",
+        "label": "OrganizationServiceFault -2147204784 in AccountNumbering",
+        "status": "New",
+        "current": 4,
+        "baseline": 0,
+        "currentPerHour": 0.167,
+        "baselinePerHour": 0
+      },
+      {
+        "fingerprint": "ec05e779ac5d2ae5",
+        "label": "OrganizationServiceFault -2147220891 in AccountPreCreate",
+        "status": "Increased",
+        "current": 18,
+        "baseline": 6,
+        "currentPerHour": 0.75,
+        "baselinePerHour": 0.25
+      },
+      {
+        "fingerprint": "48072af3c086d512",
+        "label": "KeyNotFoundException in OpportunityRollup",
+        "status": "Stable",
+        "current": 4,
+        "baseline": 4,
+        "currentPerHour": 0.167,
+        "baselinePerHour": 0.167
+      }
+    ],
+    "performance": [
+      {
+        "key": "contoso.plugins.invoiceexport|create|1",
+        "label": "InvoiceExport · Create (Async)",
+        "baselineMedianMs": 4618.5,
+        "currentMedianMs": 17919,
+        "ratio": 3.88,
+        "regression": true
+      },
+      {
+        "key": "contoso.workflows.sendwelcome|create|1",
+        "label": "SendWelcome · Create (Async)",
+        "baselineMedianMs": 159,
+        "currentMedianMs": 160,
+        "ratio": 1.006,
+        "regression": false
+      },
+      {
+        "key": "contoso.plugins.accountprecreate|create|0",
+        "label": "AccountPreCreate · Create (Sync)",
+        "baselineMedianMs": 203,
+        "currentMedianMs": 198,
+        "ratio": 0.975,
+        "regression": false
+      },
+      {
+        "key": "contoso.plugins.contactsync|update|0",
+        "label": "ContactSync · Update (Sync)",
+        "baselineMedianMs": 479,
+        "currentMedianMs": 428,
+        "ratio": 0.894,
+        "regression": false
+      }
+    ]
+  },
+  "limitations": [
+    "Plug-in trace logs are only written when tracing is enabled, and Dataverse deletes them after a retention period. Missing traces are not evidence that no failures happened.",
+    "Correlation ID links traces in one causal chain, which can span several operations and asynchronous continuations. It does not prove that two traces are the same operation.",
+    "Parent/child relationships are inferred from depth and timing and are labelled as suspected. Dataverse does not record them.",
+    "Heuristic correlations (no shared identifier) are leads to check, not proof of a shared transaction.",
+    "Possible explanations are hypotheses that guide the investigation. They are not confirmed root causes.",
+    "An execution is only called slow when its recorded duration meets the configured threshold for its execution mode."
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "XrmToolBox": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Softwares\\XrmToolbox\\XrmToolBox.exe"
+    }
+  }
+}
