@@ -16,6 +16,7 @@ using XrmToolBox.Extensibility;
 using XrmToolBox.Extensibility.Args;
 using XrmToolBox.Extensibility.Interfaces;
 using Label = System.Windows.Forms.Label;
+using MetadataCache = ChartDesignerPro.Explorer.MetadataCache;
 
 namespace ChartDesignerPro
 {
