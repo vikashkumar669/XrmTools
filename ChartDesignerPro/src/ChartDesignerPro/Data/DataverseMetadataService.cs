@@ -80,6 +80,7 @@ namespace ChartDesignerPro.Data
             {
                 LogicalName = md.LogicalName,
                 DisplayName = Label(md.DisplayName) ?? md.LogicalName,
+                DisplayCollectionName = Label(md.DisplayCollectionName),
                 ObjectTypeCode = md.ObjectTypeCode,
                 PrimaryIdAttribute = md.PrimaryIdAttribute,
                 PrimaryNameAttribute = md.PrimaryNameAttribute,

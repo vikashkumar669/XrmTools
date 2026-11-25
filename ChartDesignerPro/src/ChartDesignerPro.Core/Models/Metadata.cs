@@ -47,6 +47,9 @@ namespace ChartDesignerPro.Models
     {
         public string LogicalName { get; set; }
         public string DisplayName { get; set; }
+
+        /// <summary>Plural display name (EntityMetadata.DisplayCollectionName), e.g. "Opportunities".</summary>
+        public string DisplayCollectionName { get; set; }
         public int? ObjectTypeCode { get; set; }
         public string PrimaryIdAttribute { get; set; }
         public string PrimaryNameAttribute { get; set; }

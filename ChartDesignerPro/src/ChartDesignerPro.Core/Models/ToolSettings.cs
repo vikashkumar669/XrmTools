@@ -12,6 +12,12 @@ namespace ChartDesignerPro.Models
         /// <summary>Logical name of the last table filter, or null for all tables.</summary>
         public string LastTable { get; set; }
 
+        /// <summary>Favourite charts as "Scope:id" keys (see Explorer.ChartBookmarks).</summary>
+        public System.Collections.Generic.List<string> Favourites { get; set; } = new System.Collections.Generic.List<string>();
+
+        /// <summary>Recently opened charts as "Scope:id" keys, most recent first.</summary>
+        public System.Collections.Generic.List<string> Recent { get; set; } = new System.Collections.Generic.List<string>();
+
         /// <summary>Minutes before table metadata is fetched again.</summary>
         public int MetadataCacheMinutes { get; set; } = 30;
     }

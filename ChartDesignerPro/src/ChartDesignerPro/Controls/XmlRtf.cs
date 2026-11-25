@@ -1,45 +1,20 @@
 using System;
 using System.Drawing;
 using System.Text;
-using System.Windows.Forms;
 
 namespace ChartDesignerPro.Controls
 {
     /// <summary>
-    /// Read-only XML viewer with colouring (milestone M1). The editable editor with line numbers and find/replace
-    /// replaces it in milestone M3. Colouring is built as RTF in one pass, so large documents don't flicker.
+    /// Builds coloured RTF for XML in one pass (tags, attributes, values, comments). Used by <see cref="XmlEditorBox"/>.
+    /// Colouring is lexical only: it never changes the text.
     /// </summary>
-    internal sealed class XmlViewBox : RichTextBox
+    internal static class XmlRtf
     {
         /// <summary>Above this size the text is shown without colouring, to keep the UI responsive.</summary>
-        private const int ColourLimit = 300_000;
-
-        public XmlViewBox()
-        {
-            ReadOnly = true;
-            BackColor = SystemColors.Window;
-            BorderStyle = BorderStyle.None;
-            Font = new Font("Consolas", 10F);
-            WordWrap = false;
-            DetectUrls = false;
-            HideSelection = false;
-            ScrollBars = RichTextBoxScrollBars.Both;
-        }
-
-        public void ShowXml(string text)
-        {
-            text = text ?? string.Empty;
-            if (text.Length == 0 || text.Length > ColourLimit)
-            {
-                Rtf = null;
-                Text = text;
-                return;
-            }
-            Rtf = BuildRtf(text, Font);
-        }
+        public const int ColourLimit = 300_000;
 
         // Colour table indexes (1-based in RTF): 1 ink, 2 tag, 3 attribute, 4 value, 5 comment, 6 punctuation
-        private static string BuildRtf(string text, Font font)
+        public static string BuildRtf(string text, Font font)
         {
             var sb = new StringBuilder(text.Length * 2);
             sb.Append(@"{\rtf1\ansi\deff0{\fonttbl{\f0\fmodern ").Append(font.Name).Append(";}}");
