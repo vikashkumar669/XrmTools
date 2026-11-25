@@ -904,10 +904,10 @@ namespace ChartDesignerPro
             right.Controls.Add(rightHeader);
 
             // ---- Layout: explorer | (centre | properties) ----
-            var inner = new SplitContainer { Dock = DockStyle.Fill, FixedPanel = FixedPanel.Panel2 };
+            var inner = new SplitContainer { Dock = DockStyle.Fill };
             inner.Panel1.Controls.Add(centre);
             inner.Panel2.Controls.Add(right);
-            var outer = new SplitContainer { Dock = DockStyle.Fill, FixedPanel = FixedPanel.Panel1 };
+            var outer = new SplitContainer { Dock = DockStyle.Fill };
             outer.Panel1.Controls.Add(explorer);
             outer.Panel2.Controls.Add(inner);
 
@@ -918,35 +918,32 @@ namespace ChartDesignerPro
 
             // Splitter distances need the real size, which XrmToolBox only gives the control after it is docked into its
             // tab (the Load event is too early). Apply them the first time the layout is wide enough, then leave them to the user.
-            // Each split is set once, the first time its container is wide enough; after that the user's own sizes are kept.
-            // (The inner split is set on its own resize: when the outer split is first set, the inner container may not
-            // have been resized yet, which left the properties panel too narrow.)
-            var outerApplied = false;
-            var innerApplied = false;
-            void ApplyOuter(object s, EventArgs e)
+            // Panel sizes: explorer about a third of the width (320–560 px), properties 340 px. They are re-applied on every
+            // resize until the user drags a splitter, because XrmToolBox resizes (and DPI-scales) the control after creating it,
+            // which made one-time sizing unreliable. Once the user moves a splitter, their sizes are kept.
+            var outerByUser = false;
+            var innerByUser = false;
+            var sizing = false;
+            void ApplySplitters(object s, EventArgs e)
             {
-                if (outerApplied || outer.Width < 900) return;
+                if (sizing) return;
+                sizing = true;
                 try
                 {
-                    outer.SplitterDistance = Math.Min(560, Math.Max(320, outer.Width / 3));
-                    outerApplied = true;
+                    if (!outerByUser && outer.Width > 700)
+                        outer.SplitterDistance = Math.Min(560, Math.Max(320, outer.Width / 3));
+                    if (!innerByUser && inner.Width > 700)
+                        inner.SplitterDistance = inner.Width - inner.SplitterWidth - 340;
                 }
-                catch (InvalidOperationException) { /* not laid out yet: try again on the next resize */ }
-                ApplyInner(s, e);
+                catch (InvalidOperationException) { /* not laid out yet: the next resize tries again */ }
+                catch (ArgumentOutOfRangeException) { }
+                finally { sizing = false; }
             }
-            void ApplyInner(object s, EventArgs e)
-            {
-                if (innerApplied || !outerApplied || inner.Width < 700) return;
-                try
-                {
-                    inner.SplitterDistance = inner.Width - 340;
-                    innerApplied = true;
-                }
-                catch (InvalidOperationException) { }
-            }
-            outer.SizeChanged += ApplyOuter;
-            inner.SizeChanged += ApplyInner;
-            VisibleChanged += ApplyOuter;
+            outer.SplitterMoving += (s, e) => outerByUser = true;
+            inner.SplitterMoving += (s, e) => innerByUser = true;
+            outer.SizeChanged += ApplySplitters;
+            inner.SizeChanged += ApplySplitters;
+            VisibleChanged += ApplySplitters;
             ResumeLayout();
         }
 
