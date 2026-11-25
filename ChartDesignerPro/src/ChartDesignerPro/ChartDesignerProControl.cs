@@ -580,16 +580,22 @@ namespace ChartDesignerPro
             Controls.Add(_lblEnvironment);
             Controls.Add(_toolbar);
 
-            // Splitter distances need a real size: set them once the control is laid out.
-            Load += (s, e) =>
+            // Splitter distances need the real size, which XrmToolBox only gives the control after it is docked into its
+            // tab (the Load event is too early). Apply them the first time the layout is wide enough, then leave them to the user.
+            var splittersApplied = false;
+            void ApplySplitters(object s, EventArgs e)
             {
+                if (splittersApplied || outer.Width < 900) return;
                 try
                 {
-                    outer.SplitterDistance = Math.Min(560, Math.Max(300, outer.Width / 3));
-                    inner.SplitterDistance = Math.Max(300, inner.Width - 300);
+                    outer.SplitterDistance = Math.Min(560, Math.Max(320, outer.Width / 3));
+                    inner.SplitterDistance = Math.Max(300, inner.Width - 320);
+                    splittersApplied = true;
                 }
-                catch (InvalidOperationException) { /* window too small: keep defaults */ }
-            };
+                catch (InvalidOperationException) { /* not laid out yet: try again on the next resize */ }
+            }
+            outer.SizeChanged += ApplySplitters;
+            VisibleChanged += ApplySplitters;
             ResumeLayout();
         }
 
