@@ -918,20 +918,35 @@ namespace ChartDesignerPro
 
             // Splitter distances need the real size, which XrmToolBox only gives the control after it is docked into its
             // tab (the Load event is too early). Apply them the first time the layout is wide enough, then leave them to the user.
-            var splittersApplied = false;
-            void ApplySplitters(object s, EventArgs e)
+            // Each split is set once, the first time its container is wide enough; after that the user's own sizes are kept.
+            // (The inner split is set on its own resize: when the outer split is first set, the inner container may not
+            // have been resized yet, which left the properties panel too narrow.)
+            var outerApplied = false;
+            var innerApplied = false;
+            void ApplyOuter(object s, EventArgs e)
             {
-                if (splittersApplied || outer.Width < 900) return;
+                if (outerApplied || outer.Width < 900) return;
                 try
                 {
                     outer.SplitterDistance = Math.Min(560, Math.Max(320, outer.Width / 3));
-                    inner.SplitterDistance = Math.Max(300, inner.Width - 340);
-                    splittersApplied = true;
+                    outerApplied = true;
                 }
                 catch (InvalidOperationException) { /* not laid out yet: try again on the next resize */ }
+                ApplyInner(s, e);
             }
-            outer.SizeChanged += ApplySplitters;
-            VisibleChanged += ApplySplitters;
+            void ApplyInner(object s, EventArgs e)
+            {
+                if (innerApplied || !outerApplied || inner.Width < 700) return;
+                try
+                {
+                    inner.SplitterDistance = inner.Width - 340;
+                    innerApplied = true;
+                }
+                catch (InvalidOperationException) { }
+            }
+            outer.SizeChanged += ApplyOuter;
+            inner.SizeChanged += ApplyInner;
+            VisibleChanged += ApplyOuter;
             ResumeLayout();
         }
 

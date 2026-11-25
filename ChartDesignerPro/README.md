@@ -4,7 +4,7 @@
 
 A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, read their data and presentation XML, and (in later versions) validate them against what Unified Interface actually supports and save changes safely.
 
-> **Status: in development (milestone M1, read-only).** This version never writes to Dataverse. Editing, validation, diff and safe save arrive in later milestones; see [Roadmap](#roadmap).
+> **Status: in development (milestones M1–M3).** You can inspect charts and edit their XML locally, but this version **never writes to Dataverse**: validation, diff and safe save arrive in later milestones; see [Roadmap](#roadmap).
 
 | | |
 |---|---|
@@ -25,9 +25,38 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 - **Paged loading** (5,000 rows per page) with **Cancel**.
 - If personal charts can't be read (for example, missing privileges), the system charts still load and a warning explains why.
 
-### Chart inspection (read-only)
+### Favourites and recent charts
+- **☆ Favourite** marks the open chart. A ★ column shows favourites in the list.
+- **Show: All charts / ★ Favourites / Recent** filters the list. Recent lists the last 15 charts you opened, most recent first.
+- Both are kept per connection.
+
+### Summary (plain-language explanation)
+- One sentence describing what the chart shows, for example *"Counts Accounts by Owner, shown as a bar chart."* or *"Sums Est. Revenue by Actual Close Date (month), shown as a line chart, limited to the top 5."*
+- Facts: table, categories (with date grouping), measures and aggregations, chart type, number of series, Top/Bottom N, related (linked) tables, the chart's own filters, sort and titles.
+- Uses table and column **display names** from metadata, and falls back to logical names when metadata can't be read.
+- Notes explain things that are easy to miss, for example that a chart without its own filter shows the records of the view it is displayed with.
+
+### XML editor (local edits)
+- **✎ Edit** (Ctrl+E) switches the open chart to edit mode. Charts that can't be edited (Power BI, web resource, managed and not customizable) stay read-only, and the reason is shown.
+- **Editor features:**
+  - XML colouring and a line-number gutter
+  - undo/redo (Ctrl+Z / Ctrl+Y)
+  - **find and replace** (Ctrl+F / Ctrl+H, F3 for next) with match-case and a match count
+  - **Format XML** (Ctrl+Shift+F)
+  - plain-text paste, and Tab inserts two spaces
+- **Live status:** "Well-formed" or the parse error with its line and column. Click the error to jump to it.
+- **Change tracking:**
+  - ● marks a changed tab and the chart title
+  - the Summary follows your edits
+  - **↶ Discard changes** returns to the stored XML
+- **Safety:**
+  - Changing charts or closing the tool with unsaved edits asks first.
+  - The environment bar turns amber while editing and says the changes are local only.
+  - Opening a chart never makes it look changed: line endings are preserved exactly.
+
+### Chart inspection
 - **Data XML** (`datadescription`: FetchXML, categories, measures) and **Presentation XML** (`presentationdescription`: chart type, colours, labels, axes), with colouring.
-- **Indent XML** shows the XML indented. This is display only: the stored XML is never changed.
+- **Indent (view only)** shows read-only XML indented. This is display only: the stored XML is never changed. In edit mode the editor always shows the exact stored text.
 - A **well-formed check** with the line and column of any error.
 - The **Properties** panel shows the table, scope, type, default flag, managed and customizable state, owner, modified on/by and the chart id.
 - The tool explains **why a chart is read-only** when it is:
@@ -45,8 +74,9 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 
 1. In XrmToolBox, connect to an environment and open **Chart Designer Pro**.
 2. Optionally pick a **Table**, then click **▶ Load charts** (F5).
-3. Type in **Search** (Ctrl+F) to narrow the list. Click a column header to sort.
-4. Select a chart to open it, then switch between the **Data XML** and **Presentation XML** tabs.
+3. Type in **Search** (Ctrl+F) to narrow the list, click a column header to sort, or use **Show** for favourites and recent charts.
+4. Select a chart. The **Summary** tab explains it; the **Data XML** and **Presentation XML** tabs show its definition.
+5. Click **✎ Edit** to change the XML locally. Saving to Dataverse isn't available yet.
 
 **Permissions:** read access to System Charts. Personal charts are listed only when your role can read them.
 
@@ -56,9 +86,9 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 
 | Milestone | Content | Status |
 |---|---|---|
-| M1 | Plugin shell, Chart Explorer, read-only XML view, metadata service, logging | ✅ this version |
-| M2 | Favourites and recent charts, plain-language chart summary | Planned |
-| M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | Planned |
+| M1 | Plugin shell, Chart Explorer, read-only XML view, metadata service, logging | ✅ Done |
+| M2 | Favourites and recent charts, plain-language chart summary | ✅ Done |
+| M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | ✅ Done |
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | Planned |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | Planned |
 | M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | Planned (after sandbox verification) |
@@ -134,10 +164,10 @@ ChartDesignerPro/
     ChartDesignerPro.nuspec              Tool Library package definition
     ChartDesignerProPlugin.cs            MEF export: name, description, icons, colours
     ChartDesignerProControl.cs           UI: explorer, XML tabs, properties
-    Controls/                            grid, banner, toolbar helpers, XML viewer
+    Controls/                            grid, banner, toolbar helpers, XML editor (XmlEditorBox, XmlRtf)
     Data/                                Dataverse access: charts, metadata, log adapter
   src/ChartDesignerPro.Core/             chart logic with no SDK or WinForms dependency
-    Abstractions/  Models/  Xml/  Explorer/
+    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/
   tests/ChartDesignerPro.Tests/          dependency-free test runner
 ```
 
@@ -145,7 +175,9 @@ ChartDesignerPro/
 
 **1.2026.11.1**: development build (not released)
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
-- Read-only data and presentation XML with colouring, optional indentation and well-formedness check
+- Favourites and recently opened charts (per connection)
+- Summary tab: plain-language explanation of what each chart shows, using display names
+- XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits with change tracking and discard prompts (no save to Dataverse yet)
 - Properties panel and read-only reasons
 - Settings saved per connection
 
