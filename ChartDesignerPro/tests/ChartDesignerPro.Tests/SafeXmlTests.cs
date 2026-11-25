@@ -53,7 +53,26 @@ namespace ChartDesignerPro.Tests
         {
             const string text = "<Chart>\n  <!-- keep me -->\n  <Unknown Foo=\"1\" />\n</Chart>";
             Assert.True(SafeXml.TryParse(text, out var doc, out _));
-            Assert.Equal(text, doc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting));
+            Assert.Equal(text, SafeXml.Serialize(doc));
+        }
+
+        [Test]
+        public static void SerializeKeepsDeclarationAndDoesNotConvertNewlines()
+        {
+            const string text = "<?xml version=\"1.0\" encoding=\"utf-8\"?><a>\n  <b x=\"1\" />\n</a>";
+            Assert.True(SafeXml.TryParse(text, out var doc, out _));
+            var output = SafeXml.Serialize(doc);
+            Assert.DoesNotContain("\r", output);
+            Assert.Contains("<?xml version=\"1.0\"", output);
+            Assert.Contains("<a>\n  <b x=\"1\" />\n</a>", output);
+        }
+
+        [Test]
+        public static void SingleAttributeChangeLeavesEverythingElseIntact()
+        {
+            Assert.True(SafeXml.TryParse(Samples.ColumnPresentation, out var doc, out _));
+            doc.Root.Element("Series").Element("Series").SetAttributeValue("Color", "#008000");
+            Assert.Equal(Samples.ColumnPresentation.Replace("#4169E1", "#008000"), SafeXml.Serialize(doc));
         }
 
         [Test]

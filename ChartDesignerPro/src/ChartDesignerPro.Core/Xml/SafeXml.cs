@@ -127,6 +127,31 @@ namespace ChartDesignerPro.Xml
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Writes a document back to text without reformatting it: no indentation and no newline conversion.
+        /// (XDocument.ToString converts "\n" to "\r\n" on .NET Framework, which is the runtime XrmToolBox uses.)
+        /// The XML declaration is written only if the document has one. Note that parsing already normalised
+        /// "\r\n" inside the document to "\n", as the XML specification requires, which is why the tool keeps the
+        /// original text and only serializes documents the user actually changed.
+        /// </summary>
+        public static string Serialize(XDocument document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            var settings = new XmlWriterSettings
+            {
+                Indent = false,
+                OmitXmlDeclaration = document.Declaration == null,
+                NewLineHandling = NewLineHandling.None,
+                Encoding = new UTF8Encoding(false)
+            };
+            var sb = new StringBuilder();
+            using (var writer = XmlWriter.Create(new StringWriterUtf8(sb), settings))
+            {
+                document.Save(writer);
+            }
+            return sb.ToString();
+        }
+
         private sealed class StringWriterUtf8 : StringWriter
         {
             public StringWriterUtf8(StringBuilder sb) : base(sb) { }
