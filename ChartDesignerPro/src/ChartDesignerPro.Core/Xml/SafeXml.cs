@@ -104,7 +104,9 @@ namespace ChartDesignerPro.Xml
 
             // Re-parse without preserved whitespace so the writer can indent consistently.
             XDocument compact;
-            using (var reader = XmlReader.Create(new StringReader(text), CreateReaderSettings()))
+            var readerSettings = CreateReaderSettings();
+            readerSettings.IgnoreWhitespace = true; // drop existing indentation so the writer can indent consistently
+            using (var reader = XmlReader.Create(new StringReader(text), readerSettings))
             {
                 compact = XDocument.Load(reader, LoadOptions.None);
             }

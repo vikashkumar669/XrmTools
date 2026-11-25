@@ -4,7 +4,7 @@
 
 A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, read their data and presentation XML, and (in later versions) validate them against what Unified Interface actually supports and save changes safely.
 
-> **Status: in development (milestones M1–M3).** You can inspect charts and edit their XML locally, but this version **never writes to Dataverse**: validation, diff and safe save arrive in later milestones; see [Roadmap](#roadmap).
+> **Status: in development (milestones M1–M4).** You can inspect, validate and diff charts and edit their XML locally, but this version **never writes to Dataverse**: safe save arrives in a later milestone; see [Roadmap](#roadmap).
 
 | | |
 |---|---|
@@ -54,6 +54,25 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
   - The environment bar turns amber while editing and says the changes are local only.
   - Opening a chart never makes it look changed: line endings are preserved exactly.
 
+### Validation
+- **24 checks** run whenever a chart is opened or edited. Each result has a rule ID, a severity (✕ Error, ⚠ Warning, ℹ Info, ✓ Passed), what's wrong, why it matters, a suggestion, and the line. Double-click a result to jump to that line.
+- Checks never change a chart.
+- The tab title shows the counts, e.g. *Validation (1 ✕, 2 ⚠)*.
+
+| Group | Rules | Examples |
+|---|---|---|
+| Structure | CDP-S001–S007, S020 | well-formed XML, `<datadefinition>` / `<fetchcollection>` / `<categorycollection>` present, measure aliases match aggregate aliases, measure collections match `<Series>`, one `<fetch>`, size within the 16,000-character chart import limit |
+| FetchXML | CDP-F001–F005 | `aggregate="true"`, aliases on grouped and aggregate attributes, valid `aggregate` and `dategrouping` values, unique aliases |
+| Metadata | CDP-M001–M004 | query table matches the chart's table; columns exist (linked tables too); sum/avg only on numbers; min/max on numbers or dates; count vs countcolumn; date grouping only on dates; dates grouped without `dategrouping` |
+| Unified Interface | CDP-U001–U007 | documented chart types; properties Unified Interface ignores (per Microsoft's documented list); at most 5 series, or exactly 1 for comparison charts; `#VAL`/`#TOTAL` label keywords unsupported; colour ignored on pie, doughnut and funnel; `CustomColorOverride`; colour formats |
+
+- When metadata can't be read, metadata checks say **"Not checked"**; they never claim to have passed.
+
+### Diff
+- Compares your edited XML with what's stored in Dataverse, for the Data XML or the Presentation XML: − removed and + added lines, with line numbers from both versions.
+- **Ignore formatting** compares the XML structure only, so whitespace, indentation and attribute order don't count.
+- **Changed lines only** hides unchanged lines, apart from a little context around each change.
+
 ### Chart inspection
 - **Data XML** (`datadescription`: FetchXML, categories, measures) and **Presentation XML** (`presentationdescription`: chart type, colours, labels, axes), with colouring.
 - **Indent (view only)** shows read-only XML indented. This is display only: the stored XML is never changed. In edit mode the editor always shows the exact stored text.
@@ -75,7 +94,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 1. In XrmToolBox, connect to an environment and open **Chart Designer Pro**.
 2. Optionally pick a **Table**, then click **▶ Load charts** (F5).
 3. Type in **Search** (Ctrl+F) to narrow the list, click a column header to sort, or use **Show** for favourites and recent charts.
-4. Select a chart. The **Summary** tab explains it; the **Data XML** and **Presentation XML** tabs show its definition.
+4. Select a chart. The **Summary** tab explains it, the **Data XML** and **Presentation XML** tabs show its definition, **Validation** lists problems and **Diff** shows your changes.
 5. Click **✎ Edit** to change the XML locally. Saving to Dataverse isn't available yet.
 
 **Permissions:** read access to System Charts. Personal charts are listed only when your role can read them.
@@ -89,7 +108,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 | M1 | Plugin shell, Chart Explorer, read-only XML view, metadata service, logging | ✅ Done |
 | M2 | Favourites and recent charts, plain-language chart summary | ✅ Done |
 | M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | ✅ Done |
-| M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | Planned |
+| M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | Planned |
 | M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | Planned (after sandbox verification) |
 | M7 | Documentation and first release | Planned |
@@ -164,10 +183,10 @@ ChartDesignerPro/
     ChartDesignerPro.nuspec              Tool Library package definition
     ChartDesignerProPlugin.cs            MEF export: name, description, icons, colours
     ChartDesignerProControl.cs           UI: explorer, XML tabs, properties
-    Controls/                            grid, banner, toolbar helpers, XML editor (XmlEditorBox, XmlRtf)
+    Controls/                            grid, banner, toolbar helpers, XML editor (XmlEditorBox, XmlRtf), DiffView
     Data/                                Dataverse access: charts, metadata, log adapter
   src/ChartDesignerPro.Core/             chart logic with no SDK or WinForms dependency
-    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/
+    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/  Validation/  Comparison/
   tests/ChartDesignerPro.Tests/          dependency-free test runner
 ```
 
@@ -178,6 +197,8 @@ ChartDesignerPro/
 - Favourites and recently opened charts (per connection)
 - Summary tab: plain-language explanation of what each chart shows, using display names
 - XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits with change tracking and discard prompts (no save to Dataverse yet)
+- Validation: 24 checks across structure, FetchXML, metadata and Unified Interface compatibility, with explanations, suggestions and go-to-line
+- Diff of your edits against the stored XML, exact or ignoring formatting
 - Properties panel and read-only reasons
 - Settings saved per connection
 

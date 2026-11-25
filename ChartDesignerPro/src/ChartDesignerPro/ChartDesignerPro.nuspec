@@ -16,13 +16,15 @@
          embedded, nuget.org sometimes stores it as application/octet-stream, which the XrmToolBox portal rejects ("Logo Url is not valid"). -->
     <iconUrl>https://raw.githubusercontent.com/vikashkumar669/XrmTools/main/ChartDesignerPro/src/ChartDesignerPro/Resources/icon128.png</iconUrl>
     <readme>docs\README.md</readme>
-    <description>Chart Designer Pro is a chart studio for Dataverse model-driven app charts. Browse system charts (savedqueryvisualization) and personal charts (userqueryvisualization) by table, search and sort them, and inspect their data description (FetchXML, categories, measures) and presentation XML with safe parsing and clear error locations. See what each chart shows in plain words, keep favourites, and edit the XML in an editor with find/replace and formatting. Managed, non-customizable, Power BI and web-resource visualizations are identified and shown read-only.</description>
+    <description>Chart Designer Pro is a chart studio for Dataverse model-driven app charts. Browse system charts (savedqueryvisualization) and personal charts (userqueryvisualization) by table, search and sort them, and inspect their data description (FetchXML, categories, measures) and presentation XML with safe parsing and clear error locations. See what each chart shows in plain words, validate it against 24 checks including Unified Interface compatibility, keep favourites, and edit the XML in an editor with find/replace and formatting. Managed, non-customizable, Power BI and web-resource visualizations are identified and shown read-only.</description>
     <summary>Browse, inspect and validate Dataverse charts and their data and presentation XML.</summary>
     <releaseNotes>1.2026.11.1: Development build (not released).
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts
 - Summary tab: plain-language explanation of each chart
 - XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits only (no save to Dataverse yet)
+- Validation: 24 checks (structure, FetchXML, metadata, Unified Interface compatibility) with explanations and go-to-line
+- Diff of your edits against the stored XML
 - Settings saved per connection</releaseNotes>
     <copyright>Copyright © Vikash Kumar 2026</copyright>
     <!-- "XrmToolBox" must be the first tag for the tool to appear in the XrmToolBox Tool Library -->

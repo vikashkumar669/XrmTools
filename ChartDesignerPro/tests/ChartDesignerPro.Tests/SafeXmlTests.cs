@@ -88,6 +88,13 @@ namespace ChartDesignerPro.Tests
         }
 
         [Test]
+        public static void FormatReindentsAlreadyIndentedXml()
+        {
+            var formatted = SafeXml.Format("<a>\n        <b>\n   <c/>\n</b>\n</a>");
+            Assert.Equal("<a>\r\n  <b>\r\n    <c />\r\n  </b>\r\n</a>", formatted);
+        }
+
+        [Test]
         public static void FormatReturnsNullForInvalidXml()
         {
             Assert.True(SafeXml.Format(Samples.Malformed) == null, "expected null");

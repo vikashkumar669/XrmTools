@@ -5,12 +5,14 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using ChartDesignerPro.Abstractions;
+using ChartDesignerPro.Comparison;
 using ChartDesignerPro.Controls;
 using ChartDesignerPro.Data;
 using ChartDesignerPro.Editing;
 using ChartDesignerPro.Explorer;
 using ChartDesignerPro.Models;
 using ChartDesignerPro.Summary;
+using ChartDesignerPro.Validation;
 using ChartDesignerPro.Xml;
 using McTools.Xrm.Connection;
 using Microsoft.Xrm.Sdk;
@@ -23,9 +25,9 @@ using MetadataCache = ChartDesignerPro.Explorer.MetadataCache;
 namespace ChartDesignerPro
 {
     /// <summary>
-    /// Main UI. Chart Explorer on the left; the open chart (Summary, Data XML, Presentation XML) in the centre; its properties
-    /// on the right. Milestones M1–M3: charts can be inspected and their XML edited locally, but nothing is written to
-    /// Dataverse yet (safe save arrives in M6).
+    /// Main UI. Chart Explorer on the left; the open chart (Summary, Data XML, Presentation XML, Validation, Diff) in the
+    /// centre; its properties on the right. Milestones M1–M4: charts can be inspected, validated and their XML edited
+    /// locally, but nothing is written to Dataverse yet (safe save arrives in M6).
     /// </summary>
     public class ChartDesignerProControl : PluginControlBase, IGitHubPlugin, IHelpPlugin, IStatusBarMessenger
     {
@@ -78,6 +80,17 @@ namespace ChartDesignerPro
         private Label _lblDataStatus, _lblPresentationStatus;
         private FastGrid _properties;
         private System.Windows.Forms.Timer _searchTimer, _summaryTimer;
+
+        // UI: validation and diff
+        private TabPage _tabValidation, _tabDiff;
+        private FastGrid _validationGrid;
+        private Label _lblValidationSummary, _lblValidationDetails;
+        private CheckBox _chkErrors, _chkWarnings, _chkInfo, _chkPassed;
+        private ValidationReport _report;
+        private DiffView _diffView;
+        private RadioButton _rdoDiffData, _rdoDiffPresentation;
+        private CheckBox _chkIgnoreFormatting, _chkChangesOnly;
+        private Label _lblDiffSummary;
 
         public ChartDesignerProControl()
         {
@@ -482,6 +495,12 @@ namespace ChartDesignerPro
             _lblNotes.Text = "";
             _facts.Rows.Clear();
             _properties.Rows.Clear();
+            _report = null;
+            _validationGrid.Rows.Clear();
+            _lblValidationSummary.Text = "Open a chart to validate it.";
+            _lblValidationDetails.Text = "";
+            _diffView.ShowMessage("Open a chart to see its changes.");
+            _lblDiffSummary.Text = "";
             UpdateTabTitles();
             UpdateButtons();
         }
@@ -499,6 +518,8 @@ namespace ChartDesignerPro
             LoadEditors();
             BindProperties(chart);
             RefreshSummary();
+            RunValidation();
+            RefreshDiff();
             UpdateChartBanner();
             UpdateTitle();
             UpdateEnvironment();
@@ -600,6 +621,15 @@ namespace ChartDesignerPro
         {
             _tabData.Text = "Data XML" + (_workspace?.Data.IsDirty == true ? " ●" : "");
             _tabPresentation.Text = "Presentation XML" + (_workspace?.Presentation.IsDirty == true ? " ●" : "");
+            if (_tabValidation != null)
+            {
+                var r = _workspace == null ? null : _report;
+                _tabValidation.Text = r == null ? "Validation"
+                    : r.Errors > 0 ? $"Validation ({r.Errors} ✕{(r.Warnings > 0 ? $", {r.Warnings} ⚠" : "")})"
+                    : r.Warnings > 0 ? $"Validation ({r.Warnings} ⚠)"
+                    : "Validation ✓";
+                _tabDiff.Text = _workspace?.IsDirty == true ? "Diff ●" : "Diff";
+            }
         }
 
         private void RefreshSummary()
@@ -655,6 +685,103 @@ namespace ChartDesignerPro
             Add("Editable", cap.CanEdit ? "Yes (locally; saving arrives in a later milestone)" : "No: " + cap.Reason);
         }
 
+        // ============================== Validation ==============================
+
+        /// <summary>Runs every rule on the current (possibly edited) XML, with the metadata read when the chart was opened.</summary>
+        private void RunValidation()
+        {
+            if (_workspace == null) return;
+            var table = _workspace.Record.TableLogicalName != null && _workspaceMetadata.TryGetValue(_workspace.Record.TableLogicalName, out var t) ? t : null;
+            var context = ValidationContext.For(_workspace, table, name => name != null && _workspaceMetadata.TryGetValue(name, out var linked) ? linked : null);
+            _report = new ValidationEngine().Run(context);
+            BindValidation();
+            UpdateTabTitles();
+        }
+
+        private void BindValidation()
+        {
+            _validationGrid.Rows.Clear();
+            _lblValidationDetails.Text = "";
+            if (_report == null) return;
+            _lblValidationSummary.Text = _report.Summary + (_workspace?.IsDirty == true ? "  ·  validating your unsaved edits" : "");
+            _lblValidationSummary.ForeColor = _report.Errors > 0 ? Palette.ErrorFore : _report.Warnings > 0 ? Palette.WarnFore : Palette.Ok;
+            foreach (var r in _report.Results)
+            {
+                if (r.Severity == Severity.Error && !_chkErrors.Checked) continue;
+                if (r.Severity == Severity.Warning && !_chkWarnings.Checked) continue;
+                if (r.Severity == Severity.Information && !_chkInfo.Checked) continue;
+                if (r.Severity == Severity.Passed && !_chkPassed.Checked) continue;
+                var where = r.Severity == Severity.Passed ? "" :
+                    (r.Target == ValidationTarget.Data ? "Data XML" : r.Target == ValidationTarget.Presentation ? "Presentation XML" : "Chart") +
+                    (r.Line > 0 ? $" · line {r.Line}" : "");
+                var i = _validationGrid.Rows.Add(r.SeverityText, r.RuleId, r.Title, where);
+                var row = _validationGrid.Rows[i];
+                row.Tag = r;
+                row.Cells[0].Style.ForeColor = r.Severity == Severity.Error ? Palette.ErrorFore
+                    : r.Severity == Severity.Warning ? Palette.WarnFore
+                    : r.Severity == Severity.Information ? Palette.InfoFore : Palette.Ok;
+            }
+            _validationGrid.ClearSelection();
+        }
+
+        private void ShowValidationDetails()
+        {
+            if (_validationGrid.SelectedRows.Count == 0 || !(_validationGrid.SelectedRows[0].Tag is ValidationResult r))
+            {
+                _lblValidationDetails.Text = "";
+                return;
+            }
+            var parts = new List<string> { $"{r.RuleId} · {r.Category} · {r.SeverityText}", r.Title };
+            if (!string.IsNullOrEmpty(r.Location)) parts.Add("Where: " + r.Location + (r.Line > 0 ? $", line {r.Line}" : ""));
+            if (!string.IsNullOrEmpty(r.Explanation)) parts.Add("Why: " + r.Explanation);
+            if (!string.IsNullOrEmpty(r.Suggestion)) parts.Add("Suggestion: " + r.Suggestion);
+            if (r.Line > 0) parts.Add("Double-click the row to go to the line.");
+            _lblValidationDetails.Text = string.Join(Environment.NewLine, parts);
+        }
+
+        /// <summary>Opens the XML tab of a result and moves the caret to its line (the line refers to the stored text).</summary>
+        private void GoToValidationResult()
+        {
+            if (_validationGrid.SelectedRows.Count == 0 || !(_validationGrid.SelectedRows[0].Tag is ValidationResult r) || r.Line <= 0) return;
+            if (r.Target == ValidationTarget.Chart) return;
+            var kind = r.Target == ValidationTarget.Data ? DocumentKind.Data : DocumentKind.Presentation;
+            if (_workspace != null && !_workspace.IsEditing && _settings.FormattedView)
+            {
+                // Line numbers refer to the stored text; show it as stored so the line matches.
+                _binding = true;
+                try { _tsbIndent.Checked = false; } finally { _binding = false; }
+                _settings.FormattedView = false;
+                SaveSettings();
+                LoadEditors();
+                Status("Switched off 'Indent (view only)' so line numbers match the stored XML.");
+            }
+            _tabs.SelectedTab = kind == DocumentKind.Data ? _tabData : _tabPresentation;
+            EditorFor(kind).GoTo(r.Line, Math.Max(1, r.Column));
+        }
+
+        // ============================== Diff ==============================
+
+        private void RefreshDiff()
+        {
+            if (_workspace == null) return;
+            var doc = _rdoDiffPresentation.Checked ? _workspace.Presentation : _workspace.Data;
+            if (!doc.IsDirty)
+            {
+                _diffView.ShowMessage($"No changes: the {doc.Title} is exactly as stored in Dataverse.\r\n\r\nEdit the chart (✎ Edit) to see your changes here before saving.");
+                _lblDiffSummary.Text = "No changes";
+                _lblDiffSummary.ForeColor = Palette.Muted;
+                return;
+            }
+            var diff = LineDiff.Compare(doc.Original, doc.Current, _chkIgnoreFormatting.Checked);
+            if (!diff.HasChanges)
+                _diffView.ShowMessage($"The {doc.Title} differs from the stored text only in formatting (whitespace, indentation or attribute order).\r\n\r\nClear 'Ignore formatting' to see those differences.");
+            else
+                _diffView.ShowDiff(diff, _chkChangesOnly.Checked);
+            _lblDiffSummary.Text = $"{doc.Title}: {diff.Summary}" +
+                (diff.FellBackToExact ? "  ·  one side isn't well-formed, so formatting is compared too" : "");
+            _lblDiffSummary.ForeColor = diff.HasChanges ? Palette.WarnFore : Palette.Muted;
+        }
+
         // ============================== Edit commands ==============================
 
         private void BeginEdit()
@@ -681,6 +808,8 @@ namespace ChartDesignerPro
             _workspace.DiscardChanges();
             LoadEditors();
             RefreshSummary();
+            RunValidation();
+            RefreshDiff();
             UpdateChartBanner();
             UpdateTitle();
             UpdateEnvironment();
@@ -878,15 +1007,24 @@ namespace ChartDesignerPro
             _presentationEditor.CaretMoved += (s, e) => { if (!_binding) UpdateDocumentStatus(DocumentKind.Presentation); };
             _tabData = XmlTab("Data XML", "Underlying data: FetchXML, categories and measures (datadescription)", _dataEditor, _lblDataStatus);
             _tabPresentation = XmlTab("Presentation XML", "Appearance: chart type, colours, labels, axes (presentationdescription)", _presentationEditor, _lblPresentationStatus);
-            _tabs.TabPages.AddRange(new[] { _tabSummary, _tabData, _tabPresentation });
+            BuildValidationTab();
+            BuildDiffTab();
+            _tabs.TabPages.AddRange(new[] { _tabSummary, _tabData, _tabPresentation, _tabValidation, _tabDiff });
             _tabs.SelectedIndexChanged += (s, e) =>
             {
                 if (_tabs.SelectedTab == _tabSummary) RefreshSummary();
+                if (_tabs.SelectedTab == _tabDiff) RefreshDiff();
                 UpdateButtons();
             };
 
             _summaryTimer = new System.Windows.Forms.Timer { Interval = 800 };
-            _summaryTimer.Tick += (s, e) => { _summaryTimer.Stop(); RefreshSummary(); };
+            _summaryTimer.Tick += (s, e) =>
+            {
+                _summaryTimer.Stop();
+                RefreshSummary();
+                RunValidation();
+                if (_tabs.SelectedTab == _tabDiff) RefreshDiff();
+            };
 
             centre.Controls.Add(_tabs);
             centre.Controls.Add(_chartBanner);
@@ -945,6 +1083,71 @@ namespace ChartDesignerPro
             inner.SizeChanged += ApplySplitters;
             VisibleChanged += ApplySplitters;
             ResumeLayout();
+        }
+
+        private void BuildValidationTab()
+        {
+            _tabValidation = new TabPage("Validation") { BackColor = Color.White, ToolTipText = "Structure, FetchXML, metadata and Unified Interface checks" };
+            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 30, Padding = new Padding(4, 4, 4, 0), WrapContents = false };
+            var btnValidate = new Button { Text = "Validate again", AutoSize = true, FlatStyle = FlatStyle.System };
+            btnValidate.Click += (s, e) => RunValidation();
+            CheckBox Filter(string text, bool on)
+            {
+                var c = new CheckBox { Text = text, Checked = on, AutoSize = true, Padding = new Padding(6, 3, 0, 0) };
+                c.CheckedChanged += (s, e) => BindValidation();
+                return c;
+            }
+            _chkErrors = Filter("✕ Errors", true);
+            _chkWarnings = Filter("⚠ Warnings", true);
+            _chkInfo = Filter("ℹ Info", true);
+            _chkPassed = Filter("✓ Passed", false);
+            _lblValidationSummary = new Label { AutoSize = true, Padding = new Padding(12, 6, 0, 0), Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            top.Controls.AddRange(new Control[] { btnValidate, _chkErrors, _chkWarnings, _chkInfo, _chkPassed, _lblValidationSummary });
+
+            _validationGrid = new FastGrid { Dock = DockStyle.Fill, AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells };
+            _validationGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Severity", Width = 95, SortMode = DataGridViewColumnSortMode.NotSortable });
+            _validationGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Rule", Width = 80, SortMode = DataGridViewColumnSortMode.NotSortable });
+            _validationGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Finding", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, SortMode = DataGridViewColumnSortMode.NotSortable, DefaultCellStyle = { WrapMode = DataGridViewTriState.True } });
+            _validationGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Where", Width = 150, SortMode = DataGridViewColumnSortMode.NotSortable });
+            _validationGrid.SelectionChanged += (s, e) => ShowValidationDetails();
+            _validationGrid.CellDoubleClick += (s, e) => GoToValidationResult();
+            _validationGrid.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { GoToValidationResult(); e.Handled = true; } };
+
+            _lblValidationDetails = new Label { Dock = DockStyle.Bottom, Height = 110, Padding = new Padding(8, 6, 8, 4), BackColor = Color.FromArgb(0xF7, 0xF9, 0xF8), ForeColor = Palette.Ink };
+            var note = new Label
+            {
+                Dock = DockStyle.Bottom, Height = 22, Padding = new Padding(8, 3, 8, 0), ForeColor = Palette.Muted,
+                Text = $"Checks report only; nothing is changed automatically. Unified Interface rules follow Microsoft's documentation (reviewed {UciCapabilities.LastReviewed})."
+            };
+            _tabValidation.Controls.Add(_validationGrid);
+            _tabValidation.Controls.Add(_lblValidationDetails);
+            _tabValidation.Controls.Add(note);
+            _tabValidation.Controls.Add(top);
+        }
+
+        private void BuildDiffTab()
+        {
+            _tabDiff = new TabPage("Diff") { BackColor = Color.White, ToolTipText = "Your changes compared with the XML stored in Dataverse" };
+            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 30, Padding = new Padding(4, 4, 4, 0), WrapContents = false };
+            _rdoDiffData = new RadioButton { Text = "Data XML", Checked = true, AutoSize = true, Padding = new Padding(2, 3, 0, 0) };
+            _rdoDiffPresentation = new RadioButton { Text = "Presentation XML", AutoSize = true, Padding = new Padding(2, 3, 0, 0) };
+            _chkIgnoreFormatting = new CheckBox { Text = "Ignore formatting", AutoSize = true, Padding = new Padding(16, 3, 0, 0) };
+            _chkChangesOnly = new CheckBox { Text = "Changed lines only", Checked = true, AutoSize = true, Padding = new Padding(6, 3, 0, 0) };
+            _lblDiffSummary = new Label { AutoSize = true, Padding = new Padding(12, 6, 0, 0), Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            _rdoDiffData.CheckedChanged += (s, e) => { if (_rdoDiffData.Checked) RefreshDiff(); };
+            _rdoDiffPresentation.CheckedChanged += (s, e) => { if (_rdoDiffPresentation.Checked) RefreshDiff(); };
+            _chkIgnoreFormatting.CheckedChanged += (s, e) => RefreshDiff();
+            _chkChangesOnly.CheckedChanged += (s, e) => RefreshDiff();
+            top.Controls.AddRange(new Control[] { _rdoDiffData, _rdoDiffPresentation, _chkIgnoreFormatting, _chkChangesOnly, _lblDiffSummary });
+            _diffView = new DiffView { Dock = DockStyle.Fill };
+            var legend = new Label
+            {
+                Dock = DockStyle.Bottom, Height = 22, Padding = new Padding(8, 3, 8, 0), ForeColor = Palette.Muted,
+                Text = "Columns: line in the stored XML, line in your version.  − removed  + added.  This is the diff you'll confirm before saving (milestone M6)."
+            };
+            _tabDiff.Controls.Add(_diffView);
+            _tabDiff.Controls.Add(legend);
+            _tabDiff.Controls.Add(top);
         }
 
         /// <summary>Grows the summary sentence label to fit its wrapped text.</summary>
