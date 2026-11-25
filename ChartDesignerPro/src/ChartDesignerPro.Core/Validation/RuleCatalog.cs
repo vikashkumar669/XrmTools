@@ -414,7 +414,7 @@ namespace ChartDesignerPro.Validation
                 var documented = UciCapabilities.SupportedAttributes.ContainsKey(g.Key);
                 yield return new ValidationResult
                 {
-                    Severity = Severity.Information, Target = ValidationTarget.Presentation, Line = LineOf(g.First().Element),
+                    Severity = Severity.Information, Target = ValidationTarget.Presentation, Line = LineOf(g.First().Element), Column = ColumnOf(g.First().Element),
                     Title = documented
                         ? $"<{g.Key}>: {string.Join(", ", attributes)} {(attributes.Count == 1 ? "isn't" : "aren't")} used by Unified Interface"
                         : $"<{g.Key}> isn't documented for Unified Interface ({string.Join(", ", attributes)})",
@@ -452,7 +452,7 @@ namespace ChartDesignerPro.Validation
                 if (v.IndexOf("#VAL", StringComparison.OrdinalIgnoreCase) >= 0 || v.IndexOf("#TOTAL", StringComparison.OrdinalIgnoreCase) >= 0)
                     yield return new ValidationResult
                     {
-                        Severity = Severity.Warning, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent),
+                        Severity = Severity.Warning, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent), Column = ColumnOf(attr.Parent),
                         Title = $"{attr.Name.LocalName}=\"{v}\" uses #VAL or #TOTAL",
                         Explanation = "Microsoft states that #VAL and #TOTAL keywords aren't supported in Unified Interface, and there is no plan to support them. Charts using them may not render.",
                         Suggestion = "Use a number format such as #,0 or a percentage format instead.",
@@ -461,7 +461,7 @@ namespace ChartDesignerPro.Validation
                 else if (v.IndexOf("#PERCENT", StringComparison.OrdinalIgnoreCase) >= 0)
                     yield return new ValidationResult
                     {
-                        Severity = Severity.Information, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent),
+                        Severity = Severity.Information, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent), Column = ColumnOf(attr.Parent),
                         Title = $"{attr.Name.LocalName}=\"{v}\" uses #PERCENT",
                         Explanation = "#PERCENT is only partly supported in Unified Interface.",
                         Suggestion = "Check how the labels look in the app.",
@@ -505,7 +505,7 @@ namespace ChartDesignerPro.Validation
                 if (UciCapabilities.IsValidColor(attr.Value)) continue;
                 yield return new ValidationResult
                 {
-                    Severity = Severity.Warning, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent),
+                    Severity = Severity.Warning, Target = ValidationTarget.Presentation, Line = LineOf(attr.Parent), Column = ColumnOf(attr.Parent),
                     Title = $"{attr.Name.LocalName}=\"{attr.Value}\" isn't a supported colour format",
                     Explanation = "Supported formats are r,g,b; a,r,g,b; #RRGGBB; and named colours such as SteelBlue.",
                     Suggestion = "Use one of the supported formats, e.g. #4169E1 or 65,105,225.",
@@ -564,10 +564,10 @@ namespace ChartDesignerPro.Validation
             new ValidationResult { Severity = Severity.Information, Target = t, Title = title, Explanation = why, Suggestion = fix };
 
         private static ValidationResult ErrorAt(XElement e, ValidationTarget t, string title, string why, string fix) =>
-            new ValidationResult { Severity = Severity.Error, Target = t, Title = title, Explanation = why, Suggestion = fix, Line = LineOf(e), Location = Describe(e) };
+            new ValidationResult { Severity = Severity.Error, Target = t, Title = title, Explanation = why, Suggestion = fix, Line = LineOf(e), Column = ColumnOf(e), Location = Describe(e) };
 
         private static ValidationResult WarningAt(XElement e, ValidationTarget t, string title, string why, string fix) =>
-            new ValidationResult { Severity = Severity.Warning, Target = t, Title = title, Explanation = why, Suggestion = fix, Line = LineOf(e), Location = Describe(e) };
+            new ValidationResult { Severity = Severity.Warning, Target = t, Title = title, Explanation = why, Suggestion = fix, Line = LineOf(e), Column = ColumnOf(e), Location = Describe(e) };
 
         private static string Describe(XElement e)
         {
@@ -583,5 +583,8 @@ namespace ChartDesignerPro.Validation
         private static bool IsTrue(string value) => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
 
         private static int LineOf(XObject o) => o is IXmlLineInfo li && li.HasLineInfo() ? li.LineNumber : 0;
+
+        /// <summary>1-based column of the element's start, so "go to line" lands on it even in one-line XML.</summary>
+        private static int ColumnOf(XObject o) => o is IXmlLineInfo li && li.HasLineInfo() ? Math.Max(1, li.LinePosition - 1) : 0;
     }
 }

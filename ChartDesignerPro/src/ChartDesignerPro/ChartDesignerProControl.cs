@@ -1131,7 +1131,8 @@ namespace ChartDesignerPro
             var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 30, Padding = new Padding(4, 4, 4, 0), WrapContents = false };
             _rdoDiffData = new RadioButton { Text = "Data XML", Checked = true, AutoSize = true, Padding = new Padding(2, 3, 0, 0) };
             _rdoDiffPresentation = new RadioButton { Text = "Presentation XML", AutoSize = true, Padding = new Padding(2, 3, 0, 0) };
-            _chkIgnoreFormatting = new CheckBox { Text = "Ignore formatting", AutoSize = true, Padding = new Padding(16, 3, 0, 0) };
+            // On by default: Dataverse usually stores chart XML on one line, so an exact diff would show the whole document as one changed line.
+            _chkIgnoreFormatting = new CheckBox { Text = "Ignore formatting", Checked = true, AutoSize = true, Padding = new Padding(16, 3, 0, 0) };
             _chkChangesOnly = new CheckBox { Text = "Changed lines only", Checked = true, AutoSize = true, Padding = new Padding(6, 3, 0, 0) };
             _lblDiffSummary = new Label { AutoSize = true, Padding = new Padding(12, 6, 0, 0), Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
             _rdoDiffData.CheckedChanged += (s, e) => { if (_rdoDiffData.Checked) RefreshDiff(); };

@@ -92,6 +92,7 @@ namespace ChartDesignerPro.Tests
             Assert.True(Findings(r, "CDP-F001").Any(), "aggregate missing");
             Assert.True(Findings(r, "CDP-F002").Any(x => x.Title.Contains("stepname")), "groupby alias");
             Assert.True(Findings(r, "CDP-F003").Any(x => x.Title.Contains("'total'")), "bad aggregate");
+            Assert.True(Findings(r, "CDP-F003").Single().Column > 100, "column points into the one-line XML");
             Assert.True(Findings(r, "CDP-F004").Any(x => x.Title.Contains("'decade'")), "bad date grouping");
             Assert.True(Findings(r, "CDP-F005").Any(x => x.Title.Contains("'a'")), "duplicate alias");
         }
