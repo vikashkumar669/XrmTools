@@ -4,7 +4,7 @@
 
 A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, read their data and presentation XML, and (in later versions) validate them against what Unified Interface actually supports and save changes safely.
 
-> **Status: in development (milestones M1–M4).** You can inspect, validate and diff charts and edit their XML locally, but this version **never writes to Dataverse**: safe save arrives in a later milestone; see [Roadmap](#roadmap).
+> **Status: in development (milestones M1–M5).** You can inspect, validate, diff, import, export and back up charts and edit their XML locally, but this version **never writes to Dataverse**: safe save arrives in the next milestone; see [Roadmap](#roadmap).
 
 | | |
 |---|---|
@@ -73,6 +73,22 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 - **Ignore formatting** compares the XML structure only, so whitespace, indentation and attribute order don't count.
 - **Changed lines only** hides unchanged lines, apart from a little context around each change.
 
+### Import, export and backups
+- **⇩ Export** (chart toolbar) saves the open chart as:
+  - a **Chart Designer Pro file (.json)**: versioned, holding the chart's columns exactly as stored, plus where it came from;
+  - **Chart XML (.xml)**: a `<visualization>` file with the name, table and the data and presentation XML, exact or formatted;
+  - the **Data XML** or **Presentation XML** on its own.
+
+  If the chart has unsaved edits, you choose whether to export your edited version or the stored one.
+- **⇧ Import…** loads a `.json` or `.xml` file into the open chart **as edits**: nothing is saved to Dataverse, the Diff and Validation tabs show the result, and **↶ Discard changes** undoes it.
+  - Accepted files: the tool's JSON; `<visualization>` files, with the XML inside either nested or escaped; or a bare `<datadefinition>` or `<Chart>` file.
+  - Before anything changes, the tool shows what will be replaced and warns if the file is for a different table.
+  - Files are parsed safely, with no DTDs and a size limit.
+- **⇩ Chart list (CSV)** (main toolbar) exports the charts shown in the list: name, table, scope, type, default, managed, customizable, modified on/by, owner, id and description. Cells that could run as spreadsheet formulas are neutralised.
+- **Back up the stored version now** writes the chart as stored in Dataverse to `%APPDATA%\MscrmTools\XrmToolBox\Settings\ChartDesignerPro\Backups\<environment>\`. **Open backup folder** opens that folder. A backup is a recovery copy: to restore, import it and save.
+
+> The `<visualization>` XML layout is modelled on the app's **Export Chart** file but hasn't yet been checked against a real export. Until it has, try importing a test copy in a sandbox before relying on the `.xml` file in the app. The `.json` file is the reliable format for moving charts with this tool.
+
 ### Chart inspection
 - **Data XML** (`datadescription`: FetchXML, categories, measures) and **Presentation XML** (`presentationdescription`: chart type, colours, labels, axes), with colouring.
 - **Indent (view only)** shows read-only XML indented. This is display only: the stored XML is never changed. In edit mode the editor always shows the exact stored text.
@@ -109,7 +125,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 | M2 | Favourites and recent charts, plain-language chart summary | ✅ Done |
 | M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | ✅ Done |
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
-| M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | Planned |
+| M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | ✅ Done |
 | M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | Planned (after sandbox verification) |
 | M7 | Documentation and first release | Planned |
 
@@ -186,7 +202,7 @@ ChartDesignerPro/
     Controls/                            grid, banner, toolbar helpers, XML editor (XmlEditorBox, XmlRtf), DiffView
     Data/                                Dataverse access: charts, metadata, log adapter
   src/ChartDesignerPro.Core/             chart logic with no SDK or WinForms dependency
-    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/  Validation/  Comparison/
+    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/  Validation/  Comparison/  ImportExport/
   tests/ChartDesignerPro.Tests/          dependency-free test runner
 ```
 
@@ -199,6 +215,7 @@ ChartDesignerPro/
 - XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits with change tracking and discard prompts (no save to Dataverse yet)
 - Validation: 24 checks across structure, FetchXML, metadata and Unified Interface compatibility, with explanations, suggestions and go-to-line
 - Diff of your edits against the stored XML, exact or ignoring formatting
+- Import (.json / .xml) into a chart as reviewable edits; export as JSON, chart XML, data or presentation XML; chart list as CSV; local backups
 - Properties panel and read-only reasons
 - Settings saved per connection
 

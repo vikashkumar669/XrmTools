@@ -25,6 +25,7 @@
 - XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits only (no save to Dataverse yet)
 - Validation: 24 checks (structure, FetchXML, metadata, Unified Interface compatibility) with explanations and go-to-line
 - Diff of your edits against the stored XML
+- Import and export (JSON, chart XML, data or presentation XML), chart list as CSV, local backups
 - Settings saved per connection</releaseNotes>
     <copyright>Copyright © Vikash Kumar 2026</copyright>
     <!-- "XrmToolBox" must be the first tag for the tool to appear in the XrmToolBox Tool Library -->

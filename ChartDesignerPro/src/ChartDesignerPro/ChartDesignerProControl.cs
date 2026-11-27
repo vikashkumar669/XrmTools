@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
@@ -10,6 +12,7 @@ using ChartDesignerPro.Controls;
 using ChartDesignerPro.Data;
 using ChartDesignerPro.Editing;
 using ChartDesignerPro.Explorer;
+using ChartDesignerPro.ImportExport;
 using ChartDesignerPro.Models;
 using ChartDesignerPro.Summary;
 using ChartDesignerPro.Validation;
@@ -26,12 +29,13 @@ namespace ChartDesignerPro
 {
     /// <summary>
     /// Main UI. Chart Explorer on the left; the open chart (Summary, Data XML, Presentation XML, Validation, Diff) in the
-    /// centre; its properties on the right. Milestones M1–M4: charts can be inspected, validated and their XML edited
-    /// locally, but nothing is written to Dataverse yet (safe save arrives in M6).
+    /// centre; its properties on the right. Milestones M1–M5: charts can be inspected, validated, imported, exported, backed
+    /// up and their XML edited locally, but nothing is written to Dataverse yet (safe save arrives in M6).
     /// </summary>
     public class ChartDesignerProControl : PluginControlBase, IGitHubPlugin, IHelpPlugin, IStatusBarMessenger
     {
         private const string AppName = "Chart Designer Pro";
+        private static readonly string ToolVersion = typeof(ChartDesignerProControl).Assembly.GetName().Version?.ToString() ?? "";
 
         // IGitHubPlugin / IHelpPlugin
         public string RepositoryName => "XrmTools";
@@ -70,7 +74,8 @@ namespace ChartDesignerPro
         // UI: open chart
         private Label _lblTitle;
         private ToolStrip _chartBar;
-        private ToolStripButton _tsbFavourite, _tsbEdit, _tsbDiscard, _tsbFormat, _tsbFind, _tsbIndent;
+        private ToolStripButton _tsbFavourite, _tsbEdit, _tsbDiscard, _tsbFormat, _tsbFind, _tsbIndent, _tsbImport, _tsbExportList;
+        private ToolStripDropDownButton _tsbExport;
         private Banner _chartBanner;
         private TabControl _tabs;
         private TabPage _tabSummary, _tabData, _tabPresentation;
@@ -221,6 +226,11 @@ namespace ChartDesignerPro
             _tsbFormat.Enabled = editing && ActiveEditor() != null;
             _tsbFind.Enabled = open && ActiveEditor() != null;
             _tsbIndent.Enabled = open && !editing;
+            _tsbImport.Enabled = open && _workspace.Capability.CanEdit;
+            _tsbImport.ToolTipText = open && !_workspace.Capability.CanEdit ? _workspace.Capability.Reason
+                : "Load a chart file (.json or .xml) into this chart as edits you can review in Validation and Diff";
+            _tsbExport.Enabled = open;
+            _tsbExportList.Enabled = _grid.Rows.Count > 0;
         }
 
         // ============================== Load charts ==============================
@@ -388,6 +398,7 @@ namespace ChartDesignerPro
                     ? (_sortDescending ? SortOrder.Descending : SortOrder.Ascending)
                     : SortOrder.None;
 
+            if (_tsbExportList != null) _tsbExportList.Enabled = _grid.Rows.Count > 0;
             _lblCount.Text = _charts.Count == 0
                 ? "No charts loaded"
                 : view == ChartListView.Favourites && _grid.Rows.Count == 0 ? "No favourites yet: open a chart and click ☆ Favourite"
@@ -782,6 +793,204 @@ namespace ChartDesignerPro
             _lblDiffSummary.ForeColor = diff.HasChanges ? Palette.WarnFore : Palette.Muted;
         }
 
+        // ============================== Import / export / backup ==============================
+
+        private enum ExportKind { Json, Xml, XmlFormatted, DataOnly, PresentationOnly }
+
+        private string EnvironmentName => ConnectionDetail?.ConnectionName ?? "Unknown environment";
+
+        private string BackupFolder()
+        {
+            string root;
+            try { root = XrmToolBox.Extensibility.Paths.SettingsPath; }
+            catch { root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MscrmTools", "XrmToolBox", "Settings"); }
+            return Path.Combine(root, "ChartDesignerPro", "Backups");
+        }
+
+        private void ImportIntoChart()
+        {
+            if (_workspace == null) return;
+            if (!_workspace.Capability.CanEdit)
+            {
+                MessageBox.Show(this, _workspace.Capability.Reason, AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            string path;
+            using (var dlg = new OpenFileDialog { Title = "Import a chart file", Filter = "Chart files (*.json;*.xml)|*.json;*.xml|All files (*.*)|*.*" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                path = dlg.FileName;
+            }
+
+            ChartFileImport import;
+            try
+            {
+                var info = new FileInfo(path);
+                if (info.Length > ChartFileFormat.MaxFileCharacters * 2L)
+                    throw new ChartFileException($"The file is too large ({info.Length:N0} bytes).");
+                import = ChartFileFormat.Read(File.ReadAllText(path));
+            }
+            catch (ChartFileException ex)
+            {
+                MessageBox.Show(this, ex.Message, AppName + ": import", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                MessageBox.Show(this, "The file couldn't be read: " + ex.Message, AppName + ": import", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var f = import.File;
+            var lines = new List<string> { $"File: {Path.GetFileName(path)}" };
+            if (!string.IsNullOrEmpty(f.Name)) lines.Add($"Chart in the file: {f.Name}" + (string.IsNullOrEmpty(f.Table) ? "" : $" ({f.Table})"));
+            if (!string.IsNullOrEmpty(f.Source?.Environment)) lines.Add($"Exported from: {f.Source.Environment}" + (string.IsNullOrEmpty(f.ExportedUtc) ? "" : $" on {f.ExportedUtc}"));
+            lines.Add("");
+            lines.Add($"Into the open chart: {_workspace.Record.Name} ({_workspace.Record.TableLogicalName})");
+            lines.Add("Replaces: " + (import.HasData && import.HasPresentation ? "Data XML and Presentation XML" : import.HasData ? "Data XML only" : "Presentation XML only"));
+            var warning = false;
+            if (!string.IsNullOrEmpty(f.Table) && !string.Equals(f.Table, _workspace.Record.TableLogicalName, StringComparison.OrdinalIgnoreCase))
+            {
+                lines.Add("");
+                lines.Add($"⚠ The file is for table '{f.Table}', but this chart belongs to '{_workspace.Record.TableLogicalName}'. Validation will report column references that don't exist here.");
+                warning = true;
+            }
+            foreach (var note in import.Notes) lines.Add("ℹ " + note);
+            lines.Add("");
+            lines.Add("The chart's name and description aren't changed. Nothing is saved to Dataverse: review the result in the Validation and Diff tabs, and use ↶ Discard changes to undo.");
+            lines.Add("");
+            lines.Add("Import?");
+            if (MessageBox.Show(this, string.Join(Environment.NewLine, lines), AppName + ": import",
+                    MessageBoxButtons.YesNo, warning ? MessageBoxIcon.Warning : MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                return;
+
+            if (!_workspace.IsEditing) BeginEdit();
+            if (!_workspace.IsEditing) return;
+            if (import.HasData) _dataEditor.ReplaceAllText(f.DataXml);
+            if (import.HasPresentation) _presentationEditor.ReplaceAllText(f.PresentationXml);
+            RefreshSummary();
+            RunValidation();
+            _tabs.SelectedTab = _tabDiff;
+            if (import.HasPresentation && !import.HasData) _rdoDiffPresentation.Checked = true; else _rdoDiffData.Checked = true;
+            RefreshDiff();
+            _log.Info("Imported {0} into chart {1} ({2})", Path.GetFileName(path), _workspace.Record.Name, _workspace.Record.Id);
+            Status($"Imported {Path.GetFileName(path)}. Review the changes in Diff and Validation; nothing is saved yet.");
+        }
+
+        private void ExportChart(ExportKind kind)
+        {
+            if (_workspace == null) return;
+            var data = _workspace.Data.Original;
+            var presentation = _workspace.Presentation.Original;
+            var version = "stored";
+            if (_workspace.IsDirty)
+            {
+                var answer = MessageBox.Show(this,
+                    "This chart has unsaved changes.\n\nYes: export your edited version\nNo: export the version stored in Dataverse",
+                    AppName + ": export", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (answer == DialogResult.Cancel) return;
+                if (answer == DialogResult.Yes)
+                {
+                    data = _workspace.Data.Current;
+                    presentation = _workspace.Presentation.Current;
+                    version = "edited";
+                }
+            }
+
+            var file = ChartFile.From(_workspace.Record, data, presentation, EnvironmentName, EnvironmentUrl(ConnectionDetail), ToolVersion, DateTime.UtcNow);
+            string content, extension, filter, suffix = "";
+            switch (kind)
+            {
+                case ExportKind.Json:
+                    content = ChartFileFormat.WriteJson(file); extension = ".json"; filter = "Chart Designer Pro chart (*.json)|*.json"; break;
+                case ExportKind.Xml:
+                    content = ChartFileFormat.WriteVisualizationXml(file, indent: false); extension = ".xml"; filter = "Chart XML (*.xml)|*.xml"; break;
+                case ExportKind.XmlFormatted:
+                    content = ChartFileFormat.WriteVisualizationXml(file, indent: true); extension = ".xml"; filter = "Chart XML (*.xml)|*.xml"; break;
+                case ExportKind.DataOnly:
+                    content = data; extension = ".xml"; filter = "Data XML (*.xml)|*.xml"; suffix = " - data"; break;
+                default:
+                    content = presentation; extension = ".xml"; filter = "Presentation XML (*.xml)|*.xml"; suffix = " - presentation"; break;
+            }
+
+            using (var dlg = new SaveFileDialog
+            {
+                Title = "Export chart",
+                FileName = ChartFileFormat.DefaultFileName(_workspace.Record, DateTime.Now) + suffix + extension,
+                Filter = filter + "|All files (*.*)|*.*",
+                OverwritePrompt = true,
+                AddExtension = true
+            })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    File.WriteAllText(dlg.FileName, content ?? string.Empty, new System.Text.UTF8Encoding(false));
+                    _log.Info("Exported the {0} version of chart {1} to {2}", version, _workspace.Record.Id, dlg.FileName);
+                    _banner.Show(Banner.Kind.Ok, $"Exported the {version} version of '{_workspace.Record.Name}' to {dlg.FileName}");
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "The file couldn't be written: " + ex.Message, AppName + ": export", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
+        private void ExportList()
+        {
+            var rows = _grid.Rows.Cast<DataGridViewRow>().Select(r => r.Tag).OfType<ChartRecord>().ToList();
+            if (rows.Count == 0) return;
+            using (var dlg = new SaveFileDialog
+            {
+                Title = "Export chart list",
+                FileName = ChartFileFormat.SafeFileName(EnvironmentName, 60) + " - charts - " + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".csv",
+                Filter = "CSV (*.csv)|*.csv|All files (*.*)|*.*",
+                OverwritePrompt = true,
+                AddExtension = true
+            })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    File.WriteAllText(dlg.FileName, InventoryCsv.Write(rows), new System.Text.UTF8Encoding(false));
+                    _banner.Show(Banner.Kind.Ok, $"Exported {rows.Count:N0} charts (as filtered in the list) to {dlg.FileName}");
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "The file couldn't be written: " + ex.Message, AppName + ": export", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
+        private void BackupNow()
+        {
+            if (_workspace == null) return;
+            try
+            {
+                var path = new BackupStore(BackupFolder()).Save(_workspace.Record, EnvironmentName, EnvironmentUrl(ConnectionDetail), ToolVersion);
+                _log.Info("Backed up chart {0} to {1}", _workspace.Record.Id, path);
+                _banner.Show(Banner.Kind.Ok, $"Backed up the stored version of '{_workspace.Record.Name}' to {path}");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is InvalidOperationException)
+            {
+                MessageBox.Show(this, "The backup couldn't be written: " + ex.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void OpenFolder(string folder)
+        {
+            try
+            {
+                Directory.CreateDirectory(folder);
+                Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"The folder couldn't be opened: {ex.Message}\n\n{folder}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
         // ============================== Edit commands ==============================
 
         private void BeginEdit()
@@ -926,6 +1135,7 @@ namespace ChartDesignerPro
             _txtSearch.TextChanged += (s, e) => { _searchTimer.Stop(); _searchTimer.Start(); };
             _tsbSystem = ToolStripFactory.Toggle("System", "Include system charts (savedqueryvisualization)", true, v => OnSettingChanged(() => _settings.IncludeSystem = v, BindGrid));
             _tsbPersonal = ToolStripFactory.Toggle("Personal", "Include personal charts you own or that are shared with you (userqueryvisualization)", true, v => OnSettingChanged(() => _settings.IncludePersonal = v, BindGrid));
+            _tsbExportList = ToolStripFactory.Button("⇩ Chart list (CSV)", "Export the charts shown in the list as a CSV file", (s, e) => ExportList());
             var tsbRefreshMetadata = ToolStripFactory.Button("⟳ Metadata", "Forget cached table metadata so it is read again", (s, e) =>
             {
                 _metadata?.Clear();
@@ -937,7 +1147,7 @@ namespace ChartDesignerPro
                 tsbClose, new ToolStripSeparator(), _tsbLoad, _tsbCancel, new ToolStripSeparator(),
                 new ToolStripLabel("Table:"), _cboTable, new ToolStripLabel("Show:"), _cboView,
                 new ToolStripLabel("Search:"), _txtSearch, new ToolStripSeparator(),
-                _tsbSystem, _tsbPersonal, new ToolStripSeparator(), tsbRefreshMetadata
+                _tsbSystem, _tsbPersonal, new ToolStripSeparator(), tsbRefreshMetadata, new ToolStripSeparator(), _tsbExportList
             });
 
             _lblEnvironment = new Label
@@ -981,7 +1191,18 @@ namespace ChartDesignerPro
             _tsbFind = ToolStripFactory.Button("Find / Replace", "Find (Ctrl+F) and replace (Ctrl+H) in the current XML tab", (s, e) => ActiveEditor()?.ShowFind(_workspace?.IsEditing == true));
             _tsbIndent = ToolStripFactory.Toggle("Indent (view only)", "Show the XML indented while read-only. Display only: the stored XML is never changed.", true,
                 v => OnSettingChanged(() => _settings.FormattedView = v, () => { if (_workspace != null && !_workspace.IsEditing) LoadEditors(); }));
-            _chartBar.Items.AddRange(new ToolStripItem[] { _tsbFavourite, new ToolStripSeparator(), _tsbEdit, _tsbDiscard, new ToolStripSeparator(), _tsbFormat, _tsbFind, new ToolStripSeparator(), _tsbIndent });
+            _tsbImport = ToolStripFactory.Button("⇧ Import…", "Load a chart file into this chart as edits", (s, e) => ImportIntoChart());
+            _tsbExport = new ToolStripDropDownButton("⇩ Export") { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Save this chart to a file, or back it up" };
+            _tsbExport.DropDownItems.Add("Chart file (.json) – Chart Designer Pro format", null, (s, e) => ExportChart(ExportKind.Json));
+            _tsbExport.DropDownItems.Add("Chart XML (.xml)", null, (s, e) => ExportChart(ExportKind.Xml));
+            _tsbExport.DropDownItems.Add("Chart XML, formatted (.xml)", null, (s, e) => ExportChart(ExportKind.XmlFormatted));
+            _tsbExport.DropDownItems.Add(new ToolStripSeparator());
+            _tsbExport.DropDownItems.Add("Data XML only (.xml)", null, (s, e) => ExportChart(ExportKind.DataOnly));
+            _tsbExport.DropDownItems.Add("Presentation XML only (.xml)", null, (s, e) => ExportChart(ExportKind.PresentationOnly));
+            _tsbExport.DropDownItems.Add(new ToolStripSeparator());
+            _tsbExport.DropDownItems.Add("Back up the stored version now", null, (s, e) => BackupNow());
+            _tsbExport.DropDownItems.Add("Open backup folder", null, (s, e) => OpenFolder(BackupFolder()));
+            _chartBar.Items.AddRange(new ToolStripItem[] { _tsbFavourite, new ToolStripSeparator(), _tsbEdit, _tsbDiscard, new ToolStripSeparator(), _tsbFormat, _tsbFind, new ToolStripSeparator(), _tsbImport, _tsbExport, new ToolStripSeparator(), _tsbIndent });
             _chartBanner = new Banner();
 
             _tabs = new TabControl { Dock = DockStyle.Fill };

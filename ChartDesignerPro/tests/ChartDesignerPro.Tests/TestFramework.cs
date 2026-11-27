@@ -31,6 +31,15 @@ namespace ChartDesignerPro.Tests
                 throw new AssertionException($"{(context == null ? "" : context + ": ")}did not expect <{actual}>");
         }
 
+        /// <summary>Runs the action and returns the exception of type T it throws; fails if it throws nothing or something else.</summary>
+        public static T Throws<T>(System.Action action) where T : System.Exception
+        {
+            try { action(); }
+            catch (T ex) { return ex; }
+            catch (System.Exception ex) { throw new AssertionException($"Expected {typeof(T).Name} but got {ex.GetType().Name}: {ex.Message}"); }
+            throw new AssertionException($"Expected {typeof(T).Name} but nothing was thrown");
+        }
+
         public static void Contains(string expected, string actual)
         {
             if (actual == null || actual.IndexOf(expected, StringComparison.Ordinal) < 0)
