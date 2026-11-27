@@ -22,8 +22,9 @@
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts
 - Summary tab: plain-language explanation of each chart
-- XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits only (no save to Dataverse yet)
-- Validation: 24 checks (structure, FetchXML, metadata, Unified Interface compatibility) with explanations and go-to-line
+- XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status
+- Safe save to Dataverse: validation gate, conflict check, confirmation showing environment, URL and diff, backup first, changed columns only, scoped publish of the chart's table, read-back verification
+- Validation: 25 checks (structure, FetchXML, metadata, Unified Interface compatibility) with explanations and go-to-line
 - Diff of your edits against the stored XML
 - Import and export (JSON, chart XML, data or presentation XML), chart list as CSV, local backups
 - Settings saved per connection</releaseNotes>

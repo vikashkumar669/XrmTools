@@ -27,7 +27,7 @@ namespace ChartDesignerPro.Abstractions
         public List<string> Warnings { get; } = new List<string>();
     }
 
-    /// <summary>Reads (and, from milestone M6, writes) chart rows. Implemented in the plugin's Data/ folder.</summary>
+    /// <summary>Reads and writes chart rows. Implemented in the plugin's Data/ folder.</summary>
     public interface IChartRepository
     {
         /// <summary>Lists charts without their XML columns, paging through all results.</summary>
@@ -35,6 +35,12 @@ namespace ChartDesignerPro.Abstractions
 
         /// <summary>Retrieves one chart including datadescription and presentationdescription. Returns null when it no longer exists.</summary>
         ChartRecord Retrieve(ChartScope scope, Guid id);
+
+        /// <summary>Updates the chart's XML columns. A null argument leaves that column unchanged (only changed columns are sent).</summary>
+        void Update(ChartScope scope, Guid id, string dataXml, string presentationXml);
+
+        /// <summary>Publishes the customizations of one table (PublishXmlRequest scoped to the table), never the whole environment.</summary>
+        void PublishTable(string tableLogicalName);
     }
 
     /// <summary>Table and column metadata. Implemented in the plugin's Data/ folder; cached through <see cref="Explorer.MetadataCache"/>.</summary>

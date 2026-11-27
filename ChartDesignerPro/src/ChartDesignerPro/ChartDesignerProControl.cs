@@ -14,6 +14,7 @@ using ChartDesignerPro.Editing;
 using ChartDesignerPro.Explorer;
 using ChartDesignerPro.ImportExport;
 using ChartDesignerPro.Models;
+using ChartDesignerPro.Saving;
 using ChartDesignerPro.Summary;
 using ChartDesignerPro.Validation;
 using ChartDesignerPro.Xml;
@@ -74,7 +75,7 @@ namespace ChartDesignerPro
         // UI: open chart
         private Label _lblTitle;
         private ToolStrip _chartBar;
-        private ToolStripButton _tsbFavourite, _tsbEdit, _tsbDiscard, _tsbFormat, _tsbFind, _tsbIndent, _tsbImport, _tsbExportList;
+        private ToolStripButton _tsbFavourite, _tsbEdit, _tsbSave, _tsbPublish, _tsbDiscard, _tsbFormat, _tsbFind, _tsbIndent, _tsbImport, _tsbExportList;
         private ToolStripDropDownButton _tsbExport;
         private Banner _chartBanner;
         private TabControl _tabs;
@@ -92,6 +93,9 @@ namespace ChartDesignerPro
         private Label _lblValidationSummary, _lblValidationDetails;
         private CheckBox _chkErrors, _chkWarnings, _chkInfo, _chkPassed;
         private ValidationReport _report;
+
+        /// <summary>Tables with system charts saved without publishing in this session (offered by ⇪ Publish).</summary>
+        private readonly HashSet<string> _unpublishedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private DiffView _diffView;
         private RadioButton _rdoDiffData, _rdoDiffPresentation;
         private CheckBox _chkIgnoreFormatting, _chkChangesOnly;
@@ -221,7 +225,14 @@ namespace ChartDesignerPro
             _tsbFavourite.Enabled = open;
             _tsbFavourite.Text = open && ChartBookmarks.IsFavourite(_settings, _workspace.Record) ? "★ Favourite" : "☆ Favourite";
             _tsbEdit.Enabled = open && !editing && _workspace.Capability.CanEdit;
-            _tsbEdit.ToolTipText = open && !_workspace.Capability.CanEdit ? _workspace.Capability.Reason : "Edit the XML of this chart (Ctrl+E). Changes stay local in this version.";
+            _tsbEdit.ToolTipText = open && !_workspace.Capability.CanEdit ? _workspace.Capability.Reason : "Edit the XML of this chart (Ctrl+E). Changes stay local until you save (Ctrl+S).";
+            _tsbSave.Enabled = editing && _workspace.IsDirty && connected && !busy;
+            _tsbSave.ToolTipText = !editing ? "Edit the chart first (Ctrl+E)" : !_workspace.IsDirty ? "No changes to save"
+                : "Validate, review the diff and save to Dataverse (Ctrl+S). You confirm the environment before anything is written.";
+            var pending = open && _workspace.Record.Scope == ChartScope.System && _workspace.Record.TableLogicalName != null
+                          && _unpublishedTables.Contains(_workspace.Record.TableLogicalName);
+            _tsbPublish.Visible = pending;
+            _tsbPublish.Enabled = pending && connected && !busy;
             _tsbDiscard.Enabled = editing;
             _tsbFormat.Enabled = editing && ActiveEditor() != null;
             _tsbFind.Enabled = open && ActiveEditor() != null;
@@ -552,7 +563,7 @@ namespace ChartDesignerPro
             var cap = _workspace.Capability;
             if (!cap.CanEdit) _chartBanner.Show(Banner.Kind.Warning, "Read-only: " + cap.Reason);
             else if (_workspace.IsEditing)
-                _chartBanner.Show(Banner.Kind.Warning, "Editing locally. Saving to Dataverse arrives in a later milestone: your changes are kept only until you discard them, open another chart or close the tool (you'll be asked first).");
+                _chartBanner.Show(Banner.Kind.Warning, "Editing. Changes stay in this tool until you click 💾 Save (Ctrl+S), which validates, shows the diff and asks you to confirm the environment before writing to Dataverse.");
             else
                 _chartBanner.Show(Banner.Kind.Info, "Read-only. Click ✎ Edit to change the XML locally." + (cap.Reason == null ? "" : "  " + cap.Reason));
         }
@@ -591,6 +602,7 @@ namespace ChartDesignerPro
             UpdateDocumentStatus(kind);
             UpdateTabTitles();
             UpdateTitle();
+            UpdateButtons();
             _summaryTimer.Stop();
             _summaryTimer.Start();
         }
@@ -693,7 +705,7 @@ namespace ChartDesignerPro
             Add("Chart id", c.Id.ToString());
             if (c.WebResourceId.HasValue) Add("Web resource id", c.WebResourceId.Value.ToString());
             var cap = ChartCapability.For(c);
-            Add("Editable", cap.CanEdit ? "Yes (locally; saving arrives in a later milestone)" : "No: " + cap.Reason);
+            Add("Editable", cap.CanEdit ? "Yes" + (cap.Reason == null ? "" : ". " + cap.Reason) : "No: " + cap.Reason);
         }
 
         // ============================== Validation ==============================
@@ -993,6 +1005,215 @@ namespace ChartDesignerPro
             }
         }
 
+        // ============================== Save ==============================
+
+        /// <summary>
+        /// Save sequence (Step 2 architecture, section 8): validate → re-read the chart to detect conflicts → confirm
+        /// (environment, URL, diff, warnings, publish choice) → back up → update changed columns → publish the table
+        /// (system charts) → read back and verify → reopen the saved version.
+        /// </summary>
+        private void SaveChart()
+        {
+            if (_workspace == null || !_workspace.IsEditing || _repository == null) return;
+
+            // Validate exactly what will be sent, without waiting for the typing timer.
+            _summaryTimer?.Stop();
+            RefreshSummary();
+            RunValidation();
+            RefreshDiff();
+
+            var readiness = SaveWorkflow.CheckReadiness(_workspace, _report);
+            if (!readiness.CanSave)
+            {
+                if (readiness.Errors.Count > 0) _tabs.SelectedTab = _tabValidation;
+                var details = readiness.Errors.Count == 0 ? "" :
+                    "\n\n" + string.Join("\n", readiness.Errors.Take(6).Select(e => $"✖ {e.RuleId}: {e.Title}")) +
+                    (readiness.Errors.Count > 6 ? $"\n… and {readiness.Errors.Count - 6} more" : "");
+                MessageBox.Show(this, "The chart can't be saved yet.\n\n" + readiness.BlockReason + details, AppName + ": save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var ws = _workspace;
+            var repository = _repository;
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = $"Checking that '{ws.Record.Name}' hasn't changed in Dataverse...",
+                Work = (worker, args) => args.Result = repository.Retrieve(ws.Record.Scope, ws.Record.Id),
+                PostWorkCallBack = e =>
+                {
+                    if (_workspace != ws) return;
+                    if (e.Error != null)
+                    {
+                        ShowError("The chart couldn't be re-read before saving", e.Error, "Nothing was saved. Check the connection and try again.");
+                        return;
+                    }
+                    ConfirmAndSave(ws, readiness, SaveWorkflow.CheckConflict(ws.Record, (ChartRecord)e.Result));
+                }
+            });
+        }
+
+        private void ConfirmAndSave(ChartWorkspace ws, SaveReadiness readiness, ConflictCheck conflict)
+        {
+            if (conflict.Kind == ConflictKind.Deleted)
+            {
+                MessageBox.Show(this, conflict.Message + "\n\nYour edits are still open: export them (⇩ Export) if you want to keep them.", AppName + ": save", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            string conflictMessage = null;
+            if (conflict.Kind == ConflictKind.ChangedSinceOpened)
+            {
+                var answer = MessageBox.Show(this,
+                    conflict.Message + "\n\nSaving now would replace that version with yours.\n\n" +
+                    "Yes: continue to the save confirmation (their version is backed up first).\n" +
+                    "No: don't save. To start from their version, export or discard your edits and reopen the chart.",
+                    AppName + ": the chart changed", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+                if (answer != DialogResult.Yes) return;
+                conflictMessage = conflict.Message;
+            }
+
+            bool publish;
+            using (var dialog = new SaveConfirmDialog(ws, EnvironmentName, EnvironmentUrl(ConnectionDetail), readiness.Warnings, conflictMessage,
+                       new BackupStore(BackupFolder()).FolderFor(EnvironmentName)))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK) { Status("Save cancelled: nothing was written"); return; }
+                publish = dialog.Publish;
+            }
+
+            var request = new SaveRequest
+            {
+                Workspace = ws, CurrentInDataverse = conflict.Current, Publish = publish,
+                EnvironmentName = EnvironmentName, EnvironmentUrl = EnvironmentUrl(ConnectionDetail), ToolVersion = ToolVersion
+            };
+            var workflow = new SaveWorkflow(_repository, new BackupStore(BackupFolder()), _log);
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = ws.Record.Scope == ChartScope.System && publish ? $"Saving '{ws.Record.Name}' and publishing {ws.Record.TableLogicalName}..." : $"Saving '{ws.Record.Name}'...",
+                Work = (worker, args) => args.Result = workflow.Execute(request),
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        ShowError("Saving stopped unexpectedly", e.Error, "Check the chart in Dataverse before trying again. The backup folder has the previous version.");
+                        return;
+                    }
+                    ShowSaveResult(ws, (SaveResult)e.Result);
+                }
+            });
+        }
+
+        private void ShowSaveResult(ChartWorkspace ws, SaveResult result)
+        {
+            var record = ws.Record;
+            if (result.BackupError != null)
+            {
+                MessageBox.Show(this, "Nothing was saved: the backup of the current version couldn't be written.\n\n" + result.BackupError.Message +
+                                      "\n\nYour edits are still open.", AppName + ": save", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!result.Saved)
+            {
+                ShowError($"'{record.Name}' wasn't saved", result.UpdateError,
+                    "Nothing was changed in Dataverse and nothing was published. Your edits are still open. " +
+                    "If the message mentions privileges, ask for write access to " + (record.Scope == ChartScope.System ? "system charts (savedqueryvisualization)." : "your personal charts (userqueryvisualization)."));
+                return;
+            }
+
+            // Saved. Track publishing for system charts.
+            if (record.Scope == ChartScope.System && record.TableLogicalName != null)
+            {
+                if (result.NeedsPublish) _unpublishedTables.Add(record.TableLogicalName);
+                else if (result.Published) _unpublishedTables.Remove(record.TableLogicalName);
+            }
+
+            // Reflect the save in the list.
+            var row = _charts.FirstOrDefault(c => c.Id == record.Id && c.Scope == record.Scope);
+            if (row != null && result.SavedRecord != null)
+            {
+                row.ModifiedOnUtc = result.SavedRecord.ModifiedOnUtc;
+                row.ModifiedByName = result.SavedRecord.ModifiedByName;
+            }
+
+            // Reopen the saved version as the new baseline (read-only).
+            if (_workspace == ws)
+            {
+                if (result.SavedRecord != null)
+                {
+                    result.SavedRecord.TableDisplayName = record.TableDisplayName;
+                    ShowChart(result.SavedRecord, _workspaceMetadata);
+                }
+                else
+                {
+                    ws.Data.AcceptCurrent();
+                    ws.Presentation.AcceptCurrent();
+                    DiscardAfterSave();
+                }
+            }
+            BindGrid();
+
+            var verify = result.Verify == VerifyOutcome.Exact ? "Verified: Dataverse returned exactly what was sent."
+                : result.Verify == VerifyOutcome.Reformatted ? "Verified: Dataverse stored the same XML with different formatting."
+                : result.Verify == VerifyOutcome.Different ? "Warning: the chart read back from Dataverse differs from what was sent. Check the chart."
+                : "The chart couldn't be read back to verify the save" + (result.VerifyError == null ? "." : ": " + result.VerifyError.Message);
+            var publishText = record.Scope == ChartScope.Personal ? "Personal chart: no publishing needed."
+                : result.Published ? $"Published the {record.TableLogicalName} table."
+                : result.PublishError != null ? $"Not published: {FaultText(result.PublishError)}"
+                : $"Not published (your choice). Use ⇪ Publish table when you're ready.";
+            var summary = $"Saved '{record.Name}' to {EnvironmentName} ({string.Join(" and ", result.ColumnsSent)}). {publishText} {verify}";
+            _log.Info("{0} Backup: {1}", summary, result.BackupPath);
+
+            var problem = result.PublishError != null || result.Verify == VerifyOutcome.Different || result.Verify == VerifyOutcome.Unavailable;
+            _banner.Show(problem ? Banner.Kind.Warning : Banner.Kind.Ok, summary);
+            Status(summary);
+            if (problem)
+                MessageBox.Show(this, summary + "\n\nThe previous version is backed up at:\n" + result.BackupPath, AppName + ": save", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        /// <summary>After a save whose result couldn't be read back: keep the saved text as the baseline and leave edit mode.</summary>
+        private void DiscardAfterSave()
+        {
+            _workspace.DiscardChanges();
+            LoadEditors();
+            RefreshSummary();
+            RunValidation();
+            RefreshDiff();
+            UpdateChartBanner();
+            UpdateTitle();
+            UpdateEnvironment();
+            UpdateButtons();
+        }
+
+        private void PublishNow()
+        {
+            if (_workspace == null || _repository == null) return;
+            var table = _workspace.Record.TableLogicalName;
+            if (string.IsNullOrEmpty(table)) return;
+            var answer = MessageBox.Show(this, $"Publish the {table} table in {EnvironmentName}?\n\n{EnvironmentUrl(ConnectionDetail)}\n\n" +
+                                               "This publishes every unpublished customization of that table, not only this chart.",
+                AppName + ": publish", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+            if (answer != DialogResult.Yes) return;
+            var repository = _repository;
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = $"Publishing {table}...",
+                Work = (worker, args) => repository.PublishTable(table),
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        ShowError($"The {table} table wasn't published", e.Error, "The saved chart is unchanged. Try again, or publish from the maker portal.");
+                        return;
+                    }
+                    _unpublishedTables.Remove(table);
+                    _banner.Show(Banner.Kind.Ok, $"Published the {table} table in {EnvironmentName}.");
+                    _log.Info("Published table {0}", table);
+                    UpdateButtons();
+                }
+            });
+        }
+
+        private static string FaultText(Exception ex) =>
+            ex is System.ServiceModel.FaultException<OrganizationServiceFault> fault ? fault.Detail?.Message ?? fault.Message : ex?.Message;
+
         // ============================== Edit commands ==============================
 
         private void BeginEdit()
@@ -1053,7 +1274,7 @@ namespace ChartDesignerPro
         {
             var answer = MessageBox.Show(this,
                 $"'{_workspace.Record.Name}' has unsaved changes ({_workspace.ChangeSummary().ToLowerInvariant()}).\n\n" +
-                $"This version can't save to Dataverse yet. Discard the changes and {action}?",
+                $"Discard the changes and {action}? To keep them, choose No and save first (💾 Save, Ctrl+S).",
                 AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
             return answer == DialogResult.Yes;
         }
@@ -1091,6 +1312,9 @@ namespace ChartDesignerPro
                     break;
                 case Keys.Control | Keys.E:
                     BeginEdit();
+                    return true;
+                case Keys.Control | Keys.S:
+                    if (_tsbSave.Enabled) SaveChart();
                     return true;
                 case Keys.Control | Keys.Shift | Keys.F:
                     FormatActive();
@@ -1188,6 +1412,9 @@ namespace ChartDesignerPro
             _chartBar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(4, 0, 4, 2), RenderMode = ToolStripRenderMode.System, Dock = DockStyle.Top };
             _tsbFavourite = ToolStripFactory.Button("☆ Favourite", "Add or remove this chart from your favourites", (s, e) => ToggleFavourite());
             _tsbEdit = ToolStripFactory.Button("✎ Edit", "Edit the XML of this chart (Ctrl+E)", (s, e) => BeginEdit(), true);
+            _tsbSave = ToolStripFactory.Button("💾 Save", "Validate, review the diff and save to Dataverse (Ctrl+S)", (s, e) => SaveChart(), true);
+            _tsbPublish = ToolStripFactory.Button("⇪ Publish table", "Publish this chart's table: a system chart was saved without publishing", (s, e) => PublishNow());
+            _tsbPublish.Visible = false;
             _tsbDiscard = ToolStripFactory.Button("↶ Discard changes", "Throw away your edits and return to read-only", (s, e) => DiscardEdits());
             _tsbFormat = ToolStripFactory.Button("Format XML", "Indent the XML in the current tab (Ctrl+Shift+F). This changes the stored text.", (s, e) => FormatActive());
             _tsbFind = ToolStripFactory.Button("Find / Replace", "Find (Ctrl+F) and replace (Ctrl+H) in the current XML tab", (s, e) => ActiveEditor()?.ShowFind(_workspace?.IsEditing == true));
@@ -1204,7 +1431,7 @@ namespace ChartDesignerPro
             _tsbExport.DropDownItems.Add(new ToolStripSeparator());
             _tsbExport.DropDownItems.Add("Back up the stored version now", null, (s, e) => BackupNow());
             _tsbExport.DropDownItems.Add("Open backup folder", null, (s, e) => OpenFolder(BackupFolder()));
-            _chartBar.Items.AddRange(new ToolStripItem[] { _tsbFavourite, new ToolStripSeparator(), _tsbEdit, _tsbDiscard, new ToolStripSeparator(), _tsbFormat, _tsbFind, new ToolStripSeparator(), _tsbImport, _tsbExport, new ToolStripSeparator(), _tsbIndent });
+            _chartBar.Items.AddRange(new ToolStripItem[] { _tsbFavourite, new ToolStripSeparator(), _tsbEdit, _tsbSave, _tsbPublish, _tsbDiscard, new ToolStripSeparator(), _tsbFormat, _tsbFind, new ToolStripSeparator(), _tsbImport, _tsbExport, new ToolStripSeparator(), _tsbIndent });
             _chartBanner = new Banner();
 
             _tabs = new TabControl { Dock = DockStyle.Fill };

@@ -4,6 +4,7 @@ using System.ServiceModel;
 using System.Threading;
 using ChartDesignerPro.Abstractions;
 using ChartDesignerPro.Models;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -12,7 +13,8 @@ namespace ChartDesignerPro.Data
     /// <summary>
     /// Reads system charts (savedqueryvisualization) and personal charts (userqueryvisualization).
     /// Lists are retrieved without the two XML columns and paged by 5,000; the XML is retrieved when a chart is opened.
-    /// Read-only in this milestone: no Create, Update, Delete or Publish calls exist in this class.
+    /// Writes are limited to <see cref="Update"/> (the two XML columns of one chart) and <see cref="PublishTable"/>
+    /// (one table). There are no Create, Delete, Assign or PublishAll calls in this class.
     /// </summary>
     public sealed class DataverseChartRepository : IChartRepository
     {
@@ -115,6 +117,24 @@ namespace ChartDesignerPro.Data
             query.Criteria.AddCondition(table + "id", ConditionOperator.Equal, id);
             var rows = _service.RetrieveMultiple(query).Entities;
             return rows.Count == 0 ? null : Map(rows[0], scope, withXml: true);
+        }
+
+        public void Update(ChartScope scope, Guid id, string dataXml, string presentationXml)
+        {
+            if (dataXml == null && presentationXml == null) return;
+            var entity = new Entity(scope == ChartScope.System ? SystemTable : PersonalTable, id);
+            if (dataXml != null) entity[DataColumn] = dataXml;
+            if (presentationXml != null) entity[PresentationColumn] = presentationXml;
+            _service.Update(entity);
+        }
+
+        public void PublishTable(string tableLogicalName)
+        {
+            if (string.IsNullOrWhiteSpace(tableLogicalName)) throw new ArgumentNullException(nameof(tableLogicalName));
+            // Scoped publish: only this table's customizations, never PublishAllXmlRequest.
+            var xml = new System.Xml.Linq.XElement("importexportxml",
+                new System.Xml.Linq.XElement("entities", new System.Xml.Linq.XElement("entity", tableLogicalName)));
+            _service.Execute(new PublishXmlRequest { ParameterXml = xml.ToString(System.Xml.Linq.SaveOptions.DisableFormatting) });
         }
 
         private static ChartRecord Map(Entity e, ChartScope scope, bool withXml)

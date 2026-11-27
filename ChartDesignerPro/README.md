@@ -4,7 +4,7 @@
 
 A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, read their data and presentation XML, and (in later versions) validate them against what Unified Interface actually supports and save changes safely.
 
-> **Status: in development (milestones M1–M5).** You can inspect, validate, diff, import, export and back up charts and edit their XML locally, but this version **never writes to Dataverse**: safe save arrives in the next milestone; see [Roadmap](#roadmap).
+> **Status: in development (milestones M1–M6).** You can inspect, validate, diff, import, export and back up charts, edit their XML and save it back to Dataverse through a guarded save (validation, conflict check, confirmation with diff, backup, scoped publish, verification). See [Roadmap](#roadmap).
 
 | | |
 |---|---|
@@ -36,7 +36,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 - Uses table and column **display names** from metadata, and falls back to logical names when metadata can't be read.
 - Notes explain things that are easy to miss, for example that a chart without its own filter shows the records of the view it is displayed with.
 
-### XML editor (local edits)
+### XML editor
 - **✎ Edit** (Ctrl+E) switches the open chart to edit mode. Charts that can't be edited (Power BI, web resource, managed and not customizable) stay read-only, and the reason is shown.
 - **Editor features:**
   - XML colouring and a line-number gutter
@@ -51,7 +51,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
   - **↶ Discard changes** returns to the stored XML
 - **Safety:**
   - Changing charts or closing the tool with unsaved edits asks first.
-  - The environment bar turns amber while editing and says the changes are local only.
+  - The environment bar turns amber while editing, and changes stay in the tool until you save.
   - Opening a chart never makes it look changed: line endings are preserved exactly.
 
 ### Validation
@@ -99,6 +99,30 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
   - web-resource visualizations
   - managed charts whose *IsCustomizable* is false
 
+### Saving to Dataverse
+**💾 Save** (Ctrl+S) runs these steps in order. Nothing is written until you confirm in step 3.
+1. **Validate** the edited XML. Errors block saving and open the Validation tab. Warnings are allowed, but you must tick a box to acknowledge them.
+2. **Check for conflicts.** The chart is read again. If someone changed it after you opened it, or deleted it, you're told who and when, and you can stop.
+3. **Confirm.** The dialog shows:
+   - the **environment name and URL**, the chart, its scope and table
+   - a diff of every changed column
+   - the warnings to acknowledge
+   - for system charts, **Save and publish the table** (default) or **Save without publishing**
+   - where the backup goes
+4. **Back up** the version currently in Dataverse as JSON. If the backup can't be written, nothing is saved.
+5. **Update only the changed columns** (`datadescription`, `presentationdescription`).
+6. **Publish only the chart's table** (system charts, when chosen) with a scoped `PublishXmlRequest`, never *Publish all*. Personal charts don't need publishing.
+7. **Verify** by reading the chart back: exact, same XML reformatted, or different (reported).
+8. **Reopen** the saved version read-only and update the list.
+
+Failures are reported for each step:
+- A failed update publishes nothing, and your edits stay open.
+- A failed publish leaves the saved change in place and shows **⇪ Publish table** so you can retry.
+
+There is no automatic undo. To go back, import the backup (⇧ Import…) and save it again.
+
+**Permissions:** saving a system chart needs write access to System Charts (and publish rights); saving a personal chart needs write access to your own User Charts.
+
 ### Safety
 - XML is parsed with DTDs prohibited, no external resources resolved and a size cap, so imported or stored XML can't expand entities or read files.
 - Settings (table filter, scope toggles, indent) are saved per connection. Nothing secret is stored.
@@ -111,7 +135,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 2. Optionally pick a **Table**, then click **▶ Load charts** (F5).
 3. Type in **Search** (Ctrl+F) to narrow the list, click a column header to sort, or use **Show** for favourites and recent charts.
 4. Select a chart. The **Summary** tab explains it, the **Data XML** and **Presentation XML** tabs show its definition, **Validation** lists problems and **Diff** shows your changes.
-5. Click **✎ Edit** to change the XML locally. Saving to Dataverse isn't available yet.
+5. Click **✎ Edit** to change the XML, then **💾 Save** (Ctrl+S) to validate, review and save it to Dataverse.
 
 **Permissions:** read access to System Charts. Personal charts are listed only when your role can read them.
 
@@ -126,7 +150,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 | M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | ✅ Done |
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | ✅ Done |
-| M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | Planned (after sandbox verification) |
+| M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | ✅ Built (sandbox test in progress) |
 | M7 | Documentation and first release | Planned |
 
 Later phases add the visual designer, local preview, chart comparison and environment comparison.
@@ -202,7 +226,7 @@ ChartDesignerPro/
     Controls/                            grid, banner, toolbar helpers, XML editor (XmlEditorBox, XmlRtf), DiffView
     Data/                                Dataverse access: charts, metadata, log adapter
   src/ChartDesignerPro.Core/             chart logic with no SDK or WinForms dependency
-    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/  Validation/  Comparison/  ImportExport/
+    Abstractions/  Models/  Xml/  Explorer/  Summary/  Editing/  Validation/  Comparison/  ImportExport/  Saving/
   tests/ChartDesignerPro.Tests/          dependency-free test runner
 ```
 
@@ -212,8 +236,9 @@ ChartDesignerPro/
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts (per connection)
 - Summary tab: plain-language explanation of what each chart shows, using display names
-- XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; local edits with change tracking and discard prompts (no save to Dataverse yet)
-- Validation: 24 checks across structure, FetchXML, metadata and Unified Interface compatibility, with explanations, suggestions and go-to-line
+- XML editor with colouring, line numbers, undo/redo, find/replace, format and live well-formed status; change tracking and discard prompts
+- Safe save to Dataverse: validation gate, conflict check, confirmation showing environment, URL and diff, backup first, changed columns only, scoped publish of the chart's table, read-back verification
+- Validation: 25 checks across structure, FetchXML, metadata and Unified Interface compatibility, with explanations, suggestions and go-to-line
 - Diff of your edits against the stored XML, exact or ignoring formatting
 - Import (.json / .xml) into a chart as reviewable edits; export as JSON, chart XML, data or presentation XML; chart list as CSV; local backups
 - Properties panel and read-only reasons
