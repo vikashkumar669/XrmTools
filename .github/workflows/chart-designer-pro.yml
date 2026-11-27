@@ -104,13 +104,22 @@ jobs:
         if: steps.release.outputs.publish == 'true'
         shell: pwsh
         run: |
+          # The URL must serve this commit's icon (GitHub's raw server caches files for up to 5 minutes after a change),
+          # so wait until it does before nuget.org copies it.
           [xml]$spec = Get-Content $env:NUSPEC
           $url = $spec.package.metadata.iconUrl
-          try { $r = Invoke-WebRequest $url -Method Get -UseBasicParsing } catch { throw "Icon URL $url can't be read ($($_.Exception.Message)). Is the repository public?" }
-          if ($r.StatusCode -ne 200 -or $r.Headers['Content-Type'] -notlike 'image/png*') {
-            throw "Icon URL $url returned $($r.StatusCode) $($r.Headers['Content-Type']); expected 200 image/png"
+          $local = (Get-FileHash ChartDesignerPro/src/ChartDesignerPro/Resources/icon128.png -Algorithm SHA256).Hash
+          $deadline = (Get-Date).AddMinutes(10)
+          while ($true) {
+            try { $r = Invoke-WebRequest "$url" -Method Get -UseBasicParsing -Headers @{ 'Cache-Control' = 'no-cache' } } catch { throw "Icon URL $url can't be read ($($_.Exception.Message)). Is the repository public?" }
+            if ($r.StatusCode -ne 200 -or $r.Headers['Content-Type'] -notlike 'image/png*') { throw "Icon URL $url returned $($r.StatusCode) $($r.Headers['Content-Type']); expected 200 image/png" }
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            $remote = -join ($sha.ComputeHash($r.Content) | ForEach-Object { $_.ToString('X2') })
+            if ($remote -eq $local) { Write-Host "Icon URL OK: $url serves this commit's icon ($($r.RawContentLength) bytes)"; break }
+            if ((Get-Date) -gt $deadline) { throw "Icon URL $url still serves a different icon after 10 minutes" }
+            Write-Host "Icon URL still serves the previous icon (cache); waiting 30 s"
+            Start-Sleep -Seconds 30
           }
-          Write-Host "Icon URL OK: $url ($($r.Headers['Content-Type']), $($r.RawContentLength) bytes)"
 
       # nuget.org Trusted Publishing: exchanges GitHub's OIDC token for a one-hour API key.
       # Policy on nuget.org: owner VikashKumar0491, repo vikashkumar669/XrmTools, workflow chart-designer-pro.yml
