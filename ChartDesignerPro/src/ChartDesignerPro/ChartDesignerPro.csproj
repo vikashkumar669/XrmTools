@@ -7,9 +7,9 @@
     <RootNamespace>ChartDesignerPro</RootNamespace>
     <AssemblyName>ChartDesignerPro</AssemblyName>
     <!-- XrmToolBox convention: 1.YYYY.M.revision. Keep in sync with ChartDesignerPro.nuspec -->
-    <Version>1.2026.11.3</Version>
-    <AssemblyVersion>1.2026.11.3</AssemblyVersion>
-    <FileVersion>1.2026.11.3</FileVersion>
+    <Version>1.2026.11.4</Version>
+    <AssemblyVersion>1.2026.11.4</AssemblyVersion>
+    <FileVersion>1.2026.11.4</FileVersion>
     <Product>Chart Designer Pro</Product>
     <Company>Vikash Kumar</Company>
     <Copyright>Copyright © Vikash Kumar 2026</Copyright>
