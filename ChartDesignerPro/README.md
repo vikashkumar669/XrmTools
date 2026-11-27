@@ -4,12 +4,12 @@
 
 A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, see what each one shows in plain words, edit their data and presentation XML, check them against what Unified Interface actually supports, and save changes back safely: with a diff, a conflict check, a backup and a publish of only the chart's table.
 
-> **Status: ready for its first release (1.2026.11.1).** It isn't in the XrmToolBox Tool Library yet; until it is, build it from source (see [Build, test and debug](#build-test-and-debug)). The visual designer, preview and comparisons come in later versions; see [Roadmap](#roadmap).
+> **Status: released.** Install it from XrmToolBox › Tool Library once it has been approved there. The visual designer, preview and comparisons come in later versions; see [Roadmap](#roadmap).
 
 | | |
 |---|---|
-| **NuGet package** | `VikashKumar.XrmToolBox.ChartDesignerPro` (not published yet) |
-| **Current version** | 1.2026.11.1 (first release, not published yet) |
+| **NuGet package** | [`VikashKumar.XrmToolBox.ChartDesignerPro`](https://www.nuget.org/packages/VikashKumar.XrmToolBox.ChartDesignerPro) |
+| **Current version** | 1.2026.11.2 |
 | **Requires** | XrmToolBox 1.2025.10.74 or later (.NET Framework 4.8) |
 | **License** | MIT |
 
@@ -164,7 +164,7 @@ There is no automatic undo. To go back, import the backup (⇧ Import…) and sa
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | ✅ Done |
 | M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | ✅ Done |
-| M7 | Documentation and first release | Documentation done; release pending |
+| M7 | Documentation and first release | ✅ Done (1.2026.11.1, 2026-11-27) |
 
 Later phases add the visual designer, local preview, chart comparison and environment comparison.
 
@@ -245,6 +245,8 @@ ChartDesignerPro/
 ```
 
 ## Release notes
+
+**1.2026.11.2**: republished so nuget.org and the Tool Library pick up the package icon. No changes to the tool.
 
 **1.2026.11.1**: first release
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel

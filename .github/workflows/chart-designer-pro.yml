@@ -98,6 +98,20 @@ jobs:
           Write-Host "Publish $version : $publish"
           "publish=$($publish.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
+      # nuget.org copies the icon from iconUrl when it validates the package and never fetches it again. If the URL can't be
+      # read (for example while the repository is private), the version has no icon and the XrmToolBox portal refuses it.
+      - name: Check icon URL
+        if: steps.release.outputs.publish == 'true'
+        shell: pwsh
+        run: |
+          [xml]$spec = Get-Content $env:NUSPEC
+          $url = $spec.package.metadata.iconUrl
+          try { $r = Invoke-WebRequest $url -Method Get -UseBasicParsing } catch { throw "Icon URL $url can't be read ($($_.Exception.Message)). Is the repository public?" }
+          if ($r.StatusCode -ne 200 -or $r.Headers['Content-Type'] -notlike 'image/png*') {
+            throw "Icon URL $url returned $($r.StatusCode) $($r.Headers['Content-Type']); expected 200 image/png"
+          }
+          Write-Host "Icon URL OK: $url ($($r.Headers['Content-Type']), $($r.RawContentLength) bytes)"
+
       # nuget.org Trusted Publishing: exchanges GitHub's OIDC token for a one-hour API key.
       # Policy on nuget.org: owner VikashKumar0491, repo vikashkumar669/XrmTools, workflow chart-designer-pro.yml
       # (create this policy on nuget.org before the first release, or the login step fails)
