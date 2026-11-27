@@ -65,14 +65,23 @@ namespace ChartDesignerPro.Controls
             var tabs = new TabControl { Dock = DockStyle.Fill, Margin = new Padding(0, 4, 0, 6) };
             foreach (var doc in new[] { workspace.Data, workspace.Presentation }.Where(d => d.IsDirty))
             {
-                var diff = LineDiff.Compare(doc.Original, doc.Current, ignoreFormatting: false);
+                // Stored chart XML is usually one long line, so compare indented versions to put each change on its own
+                // short line. If only formatting changed, show the exact comparison instead. The XML is saved as edited.
+                var diff = LineDiff.Compare(doc.Original, doc.Current, ignoreFormatting: true);
+                var formattingOnly = !diff.HasChanges;
+                if (formattingOnly) diff = LineDiff.Compare(doc.Original, doc.Current, ignoreFormatting: false);
                 var view = new DiffView { Dock = DockStyle.Fill };
                 view.ShowDiff(diff, changesOnly: true);
-                var page = new TabPage($"{doc.Title}: {diff.Summary}") { BackColor = Color.White };
+                var page = new TabPage($"{doc.Title}: {diff.Summary}" + (formattingOnly ? " (formatting only)" : "")) { BackColor = Color.White };
                 page.Controls.Add(view);
                 tabs.TabPages.Add(page);
             }
             layout.Controls.Add(tabs);
+            layout.Controls.Add(new Label
+            {
+                Text = "The diff is shown indented so each change is on its own line. The XML is saved exactly as you edited it.",
+                AutoSize = true, ForeColor = Palette.Muted, Margin = new Padding(0, 0, 0, 6)
+            });
             layout.RowStyles.Clear();
 
             // Warnings
