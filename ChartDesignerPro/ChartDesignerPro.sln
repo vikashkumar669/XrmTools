@@ -1,0 +1,43 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChartDesignerPro", "src\ChartDesignerPro\ChartDesignerPro.csproj", "{A7185B0B-F1CE-5248-A510-820296A44D85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChartDesignerPro.Core", "src\ChartDesignerPro.Core\ChartDesignerPro.Core.csproj", "{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChartDesignerPro.Tests", "tests\ChartDesignerPro.Tests\ChartDesignerPro.Tests.csproj", "{57B70783-70E9-5670-B008-F0A6E3DB8F15}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9BAED478-5C66-5595-80DE-B769CB79E89F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FC278F1A-7076-523A-891D-11F1E4B34E58}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7185B0B-F1CE-5248-A510-820296A44D85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7185B0B-F1CE-5248-A510-820296A44D85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7185B0B-F1CE-5248-A510-820296A44D85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7185B0B-F1CE-5248-A510-820296A44D85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57B70783-70E9-5670-B008-F0A6E3DB8F15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57B70783-70E9-5670-B008-F0A6E3DB8F15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57B70783-70E9-5670-B008-F0A6E3DB8F15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57B70783-70E9-5670-B008-F0A6E3DB8F15}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A7185B0B-F1CE-5248-A510-820296A44D85} = {9BAED478-5C66-5595-80DE-B769CB79E89F}
+		{1D4838A5-5DBC-5B21-AB9C-BC8F321B6651} = {9BAED478-5C66-5595-80DE-B769CB79E89F}
+		{57B70783-70E9-5670-B008-F0A6E3DB8F15} = {FC278F1A-7076-523A-891D-11F1E4B34E58}
+	EndGlobalSection
+EndGlobal
