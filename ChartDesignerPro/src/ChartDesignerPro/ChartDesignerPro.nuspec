@@ -4,7 +4,7 @@
     <!-- Package id must be unique on nuget.org; keep it stable once published -->
     <id>VikashKumar.XrmToolBox.ChartDesignerPro</id>
     <!-- Keep in sync with <Version> in ChartDesignerPro.csproj (format 1.YYYY.M.rev) -->
-    <version>1.2026.11.1</version>
+    <version>1.2026.11.2</version>
     <title>Chart Designer Pro</title>
     <authors>Vikash Kumar</authors>
     <owners>vikashkumar669</owners>
@@ -18,7 +18,9 @@
     <readme>docs\README.md</readme>
     <description>Chart Designer Pro is a chart studio for Dataverse model-driven app charts. Browse system and personal charts by table, see what each chart shows in plain words, and edit its data description (FetchXML, categories, measures) and presentation XML in an editor with find/replace, formatting and live error locations. 25 validation checks cover structure, FetchXML, column metadata and Unified Interface compatibility. Save changes back safely: validation first, a conflict check, a confirmation showing the environment, URL and diff, a backup of the current version, only the changed columns written, a publish of only the chart's table, and a read-back check. Import and export chart files (including the app's Export Chart format), export the chart list as CSV, and keep local backups. Power BI, web-resource and non-customizable managed charts are shown read-only.</description>
     <summary>Inspect, validate, edit and safely save Dataverse model-driven app charts.</summary>
-    <releaseNotes>1.2026.11.1: First release.
+    <releaseNotes>1.2026.11.2: Republished so nuget.org and the XrmToolBox Tool Library pick up the package icon (1.2026.11.1 was published while the icon URL couldn't be reached). No changes to the tool.
+
+1.2026.11.1: First release.
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts
 - Summary tab: plain-language explanation of each chart
