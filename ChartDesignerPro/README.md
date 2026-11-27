@@ -2,16 +2,27 @@
 
 # Chart Designer Pro for XrmToolBox
 
-A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, read their data and presentation XML, and (in later versions) validate them against what Unified Interface actually supports and save changes safely.
+A chart studio for **Dataverse model-driven app charts**. Browse system and personal charts, see what each one shows in plain words, edit their data and presentation XML, check them against what Unified Interface actually supports, and save changes back safely: with a diff, a conflict check, a backup and a publish of only the chart's table.
 
-> **Status: in development (milestones M1–M6).** You can inspect, validate, diff, import, export and back up charts, edit their XML and save it back to Dataverse through a guarded save (validation, conflict check, confirmation with diff, backup, scoped publish, verification). See [Roadmap](#roadmap).
+> **Status: ready for its first release (1.2026.11.1).** It isn't in the XrmToolBox Tool Library yet; until it is, build it from source (see [Build, test and debug](#build-test-and-debug)). The visual designer, preview and comparisons come in later versions; see [Roadmap](#roadmap).
 
 | | |
 |---|---|
 | **NuGet package** | `VikashKumar.XrmToolBox.ChartDesignerPro` (not published yet) |
-| **Current version** | 1.2026.11.1 (development build) |
+| **Current version** | 1.2026.11.1 (first release, not published yet) |
 | **Requires** | XrmToolBox 1.2025.10.74 or later (.NET Framework 4.8) |
 | **License** | MIT |
+
+---
+
+## Documentation
+
+| | |
+|---|---|
+| [Supported features and limitations](https://github.com/vikashkumar669/XrmTools/blob/main/ChartDesignerPro/docs/SupportedFeatures.md) | What works, what's read-only, and what was verified on a real environment |
+| [Validation rules](https://github.com/vikashkumar669/XrmTools/blob/main/ChartDesignerPro/docs/ValidationRules.md) | All 25 checks, their severities and sources |
+| [Troubleshooting](https://github.com/vikashkumar669/XrmTools/blob/main/ChartDesignerPro/docs/Troubleshooting.md) | Common problems, permissions, and restoring a backup |
+| [Architecture](https://github.com/vikashkumar669/XrmTools/blob/main/ChartDesignerPro/docs/Architecture.md) | Projects, layers, the save sequence and design principles |
 
 ---
 
@@ -137,7 +148,9 @@ There is no automatic undo. To go back, import the backup (⇧ Import…) and sa
 4. Select a chart. The **Summary** tab explains it, the **Data XML** and **Presentation XML** tabs show its definition, **Validation** lists problems and **Diff** shows your changes.
 5. Click **✎ Edit** to change the XML, then **💾 Save** (Ctrl+S) to validate, review and save it to Dataverse.
 
-**Permissions:** read access to System Charts. Personal charts are listed only when your role can read them.
+**Permissions:**
+- Reading needs read access to System Charts. Personal charts are listed only when your role can read them.
+- Saving needs write access to System Charts (plus publish rights) or to your own User Charts.
 
 ---
 
@@ -151,7 +164,7 @@ There is no automatic undo. To go back, import the backup (⇧ Import…) and sa
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | ✅ Done |
 | M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | ✅ Done |
-| M7 | Documentation and first release | Planned |
+| M7 | Documentation and first release | Documentation done; release pending |
 
 Later phases add the visual designer, local preview, chart comparison and environment comparison.
 
@@ -218,6 +231,7 @@ cd <repo>\ChartDesignerPro
 ChartDesignerPro/
   ChartDesignerPro.sln
   build/pack.ps1                         tests, build, pack, push from a PC
+  docs/                                  supported features, validation rules, troubleshooting, architecture
   src/ChartDesignerPro/                  XrmToolBox plugin (net48, WinForms)
     ChartDesignerPro.csproj              compiles the core sources in, so the tool ships as one DLL
     ChartDesignerPro.nuspec              Tool Library package definition
@@ -232,7 +246,7 @@ ChartDesignerPro/
 
 ## Release notes
 
-**1.2026.11.1**: development build (not released)
+**1.2026.11.1**: first release
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts (per connection)
 - Summary tab: plain-language explanation of what each chart shows, using display names

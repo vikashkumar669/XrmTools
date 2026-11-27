@@ -16,9 +16,9 @@
          embedded, nuget.org sometimes stores it as application/octet-stream, which the XrmToolBox portal rejects ("Logo Url is not valid"). -->
     <iconUrl>https://raw.githubusercontent.com/vikashkumar669/XrmTools/main/ChartDesignerPro/src/ChartDesignerPro/Resources/icon128.png</iconUrl>
     <readme>docs\README.md</readme>
-    <description>Chart Designer Pro is a chart studio for Dataverse model-driven app charts. Browse system charts (savedqueryvisualization) and personal charts (userqueryvisualization) by table, search and sort them, and inspect their data description (FetchXML, categories, measures) and presentation XML with safe parsing and clear error locations. See what each chart shows in plain words, validate it against 24 checks including Unified Interface compatibility, keep favourites, and edit the XML in an editor with find/replace and formatting. Managed, non-customizable, Power BI and web-resource visualizations are identified and shown read-only.</description>
-    <summary>Browse, inspect and validate Dataverse charts and their data and presentation XML.</summary>
-    <releaseNotes>1.2026.11.1: Development build (not released).
+    <description>Chart Designer Pro is a chart studio for Dataverse model-driven app charts. Browse system and personal charts by table, see what each chart shows in plain words, and edit its data description (FetchXML, categories, measures) and presentation XML in an editor with find/replace, formatting and live error locations. 25 validation checks cover structure, FetchXML, column metadata and Unified Interface compatibility. Save changes back safely: validation first, a conflict check, a confirmation showing the environment, URL and diff, a backup of the current version, only the changed columns written, a publish of only the chart's table, and a read-back check. Import and export chart files (including the app's Export Chart format), export the chart list as CSV, and keep local backups. Power BI, web-resource and non-customizable managed charts are shown read-only.</description>
+    <summary>Inspect, validate, edit and safely save Dataverse model-driven app charts.</summary>
+    <releaseNotes>1.2026.11.1: First release.
 - Chart Explorer for system and personal charts: table filter, search, sort, paged loading with cancel
 - Favourites and recently opened charts
 - Summary tab: plain-language explanation of each chart

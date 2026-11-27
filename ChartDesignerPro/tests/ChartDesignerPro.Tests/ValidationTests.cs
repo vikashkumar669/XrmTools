@@ -207,6 +207,25 @@ namespace ChartDesignerPro.Tests
             Assert.Equal(1, Findings(Run(Samples.ColumnData, Pres("<ChartArea BackColor=\"White\" /><ChartArea BackColor=\"White\" />")), "CDP-S008").Count(f => f.Severity == Severity.Error));
         }
 
+        [Test]
+        public static void EveryRuleIsDocumented()
+        {
+            // docs/ValidationRules.md must list every rule, so the documentation can't drift from the catalog.
+            var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+            string doc = null;
+            for (; dir != null && doc == null; dir = dir.Parent)
+            {
+                foreach (var candidate in new[] { System.IO.Path.Combine(dir.FullName, "docs", "ValidationRules.md"),
+                                                  System.IO.Path.Combine(dir.FullName, "ChartDesignerPro", "docs", "ValidationRules.md") })
+                    if (System.IO.File.Exists(candidate)) { doc = candidate; break; }
+            }
+            Assert.True(doc != null, "docs/ValidationRules.md found above " + AppContext.BaseDirectory);
+            var text = System.IO.File.ReadAllText(doc);
+            foreach (var rule in RuleCatalog.All)
+                Assert.True(text.Contains("| " + rule.Id + " |"), rule.Id + " is listed in docs/ValidationRules.md");
+            Assert.Contains($"({RuleCatalog.All.Count} rules)", System.IO.File.ReadAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(doc), "SupportedFeatures.md")));
+        }
+
         private sealed class Crasher : IValidationRule
         {
             public string Id => "TEST-1";
