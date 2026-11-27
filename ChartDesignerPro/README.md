@@ -61,7 +61,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 
 | Group | Rules | Examples |
 |---|---|---|
-| Structure | CDP-S001–S007, S020 | well-formed XML, `<datadefinition>` / `<fetchcollection>` / `<categorycollection>` present, measure aliases match aggregate aliases, measure collections match `<Series>`, one `<fetch>`, size within the 16,000-character chart import limit |
+| Structure | CDP-S001–S008, S020 | well-formed XML, `<datadefinition>` / `<fetchcollection>` / `<categorycollection>` present, measure aliases match aggregate aliases, measure collections match `<Series>`, one `<fetch>`, one non-empty `<ChartArea>` per category (Dataverse rejects the save otherwise), size within the 16,000-character chart import limit |
 | FetchXML | CDP-F001–F005 | `aggregate="true"`, aliases on grouped and aggregate attributes, valid `aggregate` and `dategrouping` values, unique aliases |
 | Metadata | CDP-M001–M004 | query table matches the chart's table; columns exist (linked tables too); sum/avg only on numbers; min/max on numbers or dates; count vs countcolumn; date grouping only on dates; dates grouped without `dategrouping` |
 | Unified Interface | CDP-U001–U007 | documented chart types; properties Unified Interface ignores (per Microsoft's documented list); at most 5 series, or exactly 1 for comparison charts; `#VAL`/`#TOTAL` label keywords unsupported; colour ignored on pie, doughnut and funnel; `CustomColorOverride`; colour formats |
@@ -87,7 +87,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 - **⇩ Chart list (CSV)** (main toolbar) exports the charts shown in the list: name, table, scope, type, default, managed, customizable, modified on/by, owner, id and description. Cells that could run as spreadsheet formulas are neutralised.
 - **Back up the stored version now** writes the chart as stored in Dataverse to `%APPDATA%\MscrmTools\XrmToolBox\Settings\ChartDesignerPro\Backups\<environment>\`. **Open backup folder** opens that folder. A backup is a recovery copy: to restore, import it and save.
 
-> The `<visualization>` XML layout is modelled on the app's **Export Chart** file but hasn't yet been checked against a real export. Until it has, try importing a test copy in a sandbox before relying on the `.xml` file in the app. The `.json` file is the reliable format for moving charts with this tool.
+> The `.xml` export uses the same layout as the app's **Export Chart**, checked against a real export on 2026-11-27. The app's **Import Chart** accepts it: a `<visualizationid>` is required, but the app always creates a new personal chart from the file and never overwrites the chart with that id. Exports from the app can be imported into this tool too. The `.json` file keeps more detail (source environment, chart type, modified time).
 
 ### Chart inspection
 - **Data XML** (`datadescription`: FetchXML, categories, measures) and **Presentation XML** (`presentationdescription`: chart type, colours, labels, axes), with colouring.

@@ -846,6 +846,8 @@ namespace ChartDesignerPro
             var lines = new List<string> { $"File: {Path.GetFileName(path)}" };
             if (!string.IsNullOrEmpty(f.Name)) lines.Add($"Chart in the file: {f.Name}" + (string.IsNullOrEmpty(f.Table) ? "" : $" ({f.Table})"));
             if (!string.IsNullOrEmpty(f.Source?.Environment)) lines.Add($"Exported from: {f.Source.Environment}" + (string.IsNullOrEmpty(f.ExportedUtc) ? "" : $" on {f.ExportedUtc}"));
+            if (!string.IsNullOrEmpty(f.Source?.Id) && Guid.TryParse(f.Source.Id, out var fileId))
+                lines.Add(fileId == _workspace.Record.Id ? "Chart id in the file: same chart as the one open" : $"Chart id in the file: {fileId} (a different chart)");
             lines.Add("");
             lines.Add($"Into the open chart: {_workspace.Record.Name} ({_workspace.Record.TableLogicalName})");
             lines.Add("Replaces: " + (import.HasData && import.HasPresentation ? "Data XML and Presentation XML" : import.HasData ? "Data XML only" : "Presentation XML only"));

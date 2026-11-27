@@ -191,6 +191,22 @@ namespace ChartDesignerPro.Tests
             Assert.Contains("could not run", crash.Results.Single().Title);
         }
 
+        [Test]
+        public static void ChartAreasMustMatchCategories()
+        {
+            string Pres(string areas) => "<Chart><Series><Series ChartType=\"Pie\" /></Series><ChartAreas>" + areas + "</ChartAreas></Chart>";
+            Assert.Equal(0, Findings(Run(Samples.ColumnData, Pres("<ChartArea BorderColor=\"White\" />")), "CDP-S008").Count(f => f.Severity == Severity.Error));
+            Assert.Equal(0, Findings(Run(Samples.ColumnData, Samples.ColumnPresentation), "CDP-S008").Count(f => f.Severity == Severity.Error));
+            // Verified on Dataverse: both of these are rejected on save.
+            foreach (var empty in new[] { "<ChartArea />", "<ChartArea></ChartArea>" })
+            {
+                var e = Findings(Run(Samples.ColumnData, Pres(empty)), "CDP-S008").Single(f => f.Severity == Severity.Error);
+                Assert.Contains("empty", e.Title);
+            }
+            Assert.Equal(1, Findings(Run(Samples.ColumnData, "<Chart><Series><Series /></Series></Chart>"), "CDP-S008").Count(f => f.Severity == Severity.Error));
+            Assert.Equal(1, Findings(Run(Samples.ColumnData, Pres("<ChartArea BackColor=\"White\" /><ChartArea BackColor=\"White\" />")), "CDP-S008").Count(f => f.Severity == Severity.Error));
+        }
+
         private sealed class Crasher : IValidationRule
         {
             public string Id => "TEST-1";

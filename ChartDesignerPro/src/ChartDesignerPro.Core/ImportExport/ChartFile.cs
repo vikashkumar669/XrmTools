@@ -135,20 +135,25 @@ namespace ChartDesignerPro.ImportExport
         // ------------------------------------------------------------------ XML
 
         /// <summary>
-        /// Writes a &lt;visualization&gt; file with the chart's columns as child elements, modelled on the app's chart export.
+        /// Writes a &lt;visualization&gt; file with the chart's columns as child elements, in the same layout as the app's Export Chart,
+        /// so the file can be imported with the app's Import Chart.
         /// Well-formed data and presentation XML is nested as elements; anything else is written as text so nothing is lost.
         /// </summary>
         public static string WriteVisualizationXml(ChartFile file, bool indent)
         {
             var root = new XElement("visualization");
+            // The app's Import Chart rejects a file without <visualizationid> ("Required nodes missing"). It never uses the id to
+            // overwrite: a new id or an existing one both create a new chart (verified on Dataverse, 2026-11-27).
+            var id = Guid.TryParse(file.Source?.Id, out var sourceId) ? sourceId : Guid.NewGuid();
+            root.Add(new XElement("visualizationid", id.ToString("B")));
             root.Add(new XElement("name", file.Name ?? string.Empty));
             if (!string.IsNullOrEmpty(file.Description)) root.Add(new XElement("description", file.Description));
             if (!string.IsNullOrEmpty(file.Table)) root.Add(new XElement("primaryentitytypecode", file.Table));
             root.Add(new XElement("datadescription", Content(file.DataXml)));
             root.Add(new XElement("presentationdescription", Content(file.PresentationXml)));
-            root.Add(new XElement("isdefault", file.IsDefault ? "1" : "0"));
-            var doc = new XDocument(new XDeclaration("1.0", "utf-8", null), root);
-            return indent ? doc.Declaration + "\r\n" + doc.ToString(SaveOptions.None) : doc.Declaration + doc.ToString(SaveOptions.DisableFormatting);
+            // The app's Export Chart writes "true"/"false" and no XML declaration (verified 2026-11-27).
+            root.Add(new XElement("isdefault", file.IsDefault ? "true" : "false"));
+            return root.ToString(indent ? SaveOptions.None : SaveOptions.DisableFormatting);
         }
 
         private static object Content(string xml)
@@ -198,8 +203,10 @@ namespace ChartDesignerPro.ImportExport
             var v = visualizations[0];
             var result = new ChartFileImport { Kind = ChartFileKind.VisualizationXml };
             if (visualizations.Count > 1) result.Notes.Add($"The file contains {visualizations.Count} charts; the first one ('{Child(v, "name")?.Value}') is imported.");
+            var id = Child(v, "visualizationid")?.Value?.Trim().Trim('{', '}');
             var file = new ChartFile
             {
+                Source = string.IsNullOrEmpty(id) ? null : new ChartFileSource { Id = id },
                 Name = Child(v, "name")?.Value,
                 Description = Child(v, "description")?.Value,
                 Table = Child(v, "primaryentitytypecode")?.Value,

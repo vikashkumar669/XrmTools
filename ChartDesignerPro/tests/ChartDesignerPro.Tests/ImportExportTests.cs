@@ -170,5 +170,32 @@ namespace ChartDesignerPro.Tests
             chart.HasXml = false;
             Assert.Throws<InvalidOperationException>(() => new BackupStore("root", new MemoryFiles()).Save(chart, "env", null, "1"));
         }
+            [Test]
+        public static void AppExportChartFileIsRead()
+        {
+            var import = ChartFileFormat.Read(Samples.AppExport);
+            Assert.Equal(ChartFileKind.VisualizationXml, import.Kind);
+            Assert.Equal("CDP Test - Accounts by industry (pie)", import.File.Name);
+            Assert.Equal("account", import.File.Table);
+            Assert.Equal("0a18e918-3aea-f111-84ea-000d3af0ef1d", import.File.Source?.Id);
+            Assert.False(import.File.IsDefault, "isdefault false");
+            Assert.True(import.File.DataXml.StartsWith("<datadefinition>"), "data XML extracted");
+            Assert.True(import.File.PresentationXml.StartsWith("<Chart "), "presentation XML extracted");
+            Assert.Equal(0, import.Notes.Count);
+        }
+
+        [Test]
+        public static void VisualizationXmlMatchesTheAppExportLayout()
+        {
+            var file = ChartFile.From(Chart(), Samples.ColumnData, Samples.ColumnPresentation, "D365 Env", null, "1", Now);
+            var xml = ChartFileFormat.WriteVisualizationXml(file, false);
+            Assert.True(xml.StartsWith("<visualization><visualizationid>{"), "no XML declaration and the id first, like the app");
+            Assert.Equal(file.Source.Id, ChartFileFormat.Read(xml).File.Source.Id, "id round-trips");
+            Assert.Contains("<visualizationid>{", ChartFileFormat.WriteVisualizationXml(new ChartFile { Name = "no id" }, false));
+            Assert.Contains("<isdefault>true</isdefault>", xml);
+            file.IsDefault = false;
+            Assert.Contains("<isdefault>false</isdefault>", ChartFileFormat.WriteVisualizationXml(file, true));
+        }
     }
 }
+

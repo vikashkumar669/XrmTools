@@ -25,5 +25,19 @@ namespace ChartDesignerPro.Tests
 
         public const string Malformed =
             "<datadefinition>\n  <fetchcollection>\n    <fetch aggregate=\"true\">\n  </fetchcollection>\n</datadefinition>";
+            /// <summary>
+        /// A personal chart exported with the app's Export Chart on 2026-11-27 (D365 Env), verbatim: no XML declaration,
+        /// leading newline and tabs, a &lt;visualizationid&gt;, nested data and presentation XML, isdefault "false".
+        /// </summary>
+        public const string AppExport =
+            "\n\t\t<visualization>\n" +
+            "\t\t\t<visualizationid>{0a18e918-3aea-f111-84ea-000d3af0ef1d}</visualizationid>\n" +
+            "\t\t\t<name>CDP Test - Accounts by industry (pie)</name>\n" +
+            "\t\t\t<description>Chart Designer Pro test: pie with percentage labels.</description>\n" +
+            "\t\t\t<primaryentitytypecode>account</primaryentitytypecode>\n" +
+            "\t\t\t<datadescription><datadefinition><fetchcollection><fetch mapping=\"logical\" aggregate=\"true\"><entity name=\"account\"><attribute alias=\"aggregate_column\" name=\"accountid\" aggregate=\"count\" /><attribute groupby=\"true\" alias=\"groupby_column\" name=\"industrycode\" /></entity></fetch></fetchcollection><categorycollection><category><measurecollection><measure alias=\"aggregate_column\" /></measurecollection></category></categorycollection></datadefinition></datadescription>\n" +
+            "\t\t\t<presentationdescription><Chart Palette=\"None\" PaletteCustomColors=\"0,105,92; 38,166,154; 128,203,196; 255,183,77; 229,115,115\"><Series><Series ChartType=\"Pie\" IsValueShownAsLabel=\"True\" Label=\"#PERCENT{P0}\" CustomProperties=\"PieLabelStyle=Outside\" /></Series><ChartAreas><ChartArea BorderColor=\"White\" /></ChartAreas><Legends><Legend Enabled=\"True\" Docking=\"Right\" /></Legends><Titles><Title Alignment=\"TopLeft\" /></Titles></Chart></presentationdescription>\n" +
+            "\t\t\t<isdefault>false</isdefault>\n" +
+            "\t\t</visualization>\n";
     }
 }

@@ -26,6 +26,7 @@ namespace ChartDesignerPro.Validation
             new Rule("CDP-S005", RuleCategory.Structure, "Every measure alias matches an aggregate in the query", MeasureAliases),
             new Rule("CDP-S006", RuleCategory.Structure, "Measure collections match the presentation series", SeriesCount),
             new Rule("CDP-S007", RuleCategory.Structure, "One FetchXML query", SingleFetch),
+            new Rule("CDP-S008", RuleCategory.Structure, "Chart areas match the categories", ChartAreaCount),
             new Rule("CDP-S020", RuleCategory.Structure, "Size is within the chart import limit", ImportSize),
             // FetchXML
             new Rule("CDP-F001", RuleCategory.FetchXml, "The query is an aggregate query", AggregateQuery),
@@ -186,6 +187,22 @@ namespace ChartDesignerPro.Validation
             yield return Warning(ValidationTarget.Data, $"The data XML contains {c.DataModel.Fetches.Count} <fetch> queries",
                 "Model-driven charts use one query. Comparison charts use one query with two grouped attributes, not two queries. Further queries may be ignored or rejected.",
                 "Combine the queries into one <fetch>.");
+        }
+
+        private static IEnumerable<ValidationResult> ChartAreaCount(ValidationContext c)
+        {
+            if (c.Data?.Root == null || c.Presentation?.Root == null) yield break;
+            var categories = c.Data.Root.Descendants().Count(e => Is(e, "category"));
+            if (categories == 0) yield break;
+            var areas = c.Presentation.Root.Elements().Where(e => Is(e, "ChartAreas")).SelectMany(e => e.Elements()).Where(e => Is(e, "ChartArea")).ToList();
+            // Verified on Dataverse (2026-11-27): an empty <ChartArea /> (no attributes, no children) isn't counted.
+            var counted = areas.Count(e => e.HasAttributes || e.HasElements);
+            if (counted == categories) yield break;
+            var empty = areas.Count - counted;
+            var detail = empty > 0 ? $" ({empty} empty <ChartArea> element(s) don't count)" : string.Empty;
+            yield return Error(ValidationTarget.Presentation, $"{counted} chart area(s) for {categories} categor{(categories == 1 ? "y" : "ies")}{detail}",
+                "Dataverse rejects the save with \"The number of chart areas must be equal to the number of categories.\" A <ChartArea> with no attributes or child elements isn't counted.",
+                empty > 0 ? "Give the <ChartArea> an attribute, for example BackColor=\"White\" (a property Unified Interface supports)." : "Add or remove <ChartArea> elements under <ChartAreas> so there is one per <category>.");
         }
 
         private static IEnumerable<ValidationResult> ImportSize(ValidationContext c)
