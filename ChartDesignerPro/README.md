@@ -9,7 +9,7 @@ A chart studio for **Dataverse model-driven app charts**. Browse system and pers
 | | |
 |---|---|
 | **NuGet package** | [`VikashKumar.XrmToolBox.ChartDesignerPro`](https://www.nuget.org/packages/VikashKumar.XrmToolBox.ChartDesignerPro) |
-| **Current version** | 1.2026.11.2 |
+| **Current version** | 1.2026.11.3 |
 | **Requires** | XrmToolBox 1.2025.10.74 or later (.NET Framework 4.8) |
 | **License** | MIT |
 
@@ -245,6 +245,8 @@ ChartDesignerPro/
 ```
 
 ## Release notes
+
+**1.2026.11.3**: new icon (donut chart with an XML badge), clearer at small sizes. No other changes.
 
 **1.2026.11.2**: republished so nuget.org and the Tool Library pick up the package icon. No changes to the tool.
 

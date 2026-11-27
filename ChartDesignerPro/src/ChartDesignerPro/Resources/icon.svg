@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00897B"/><stop offset="1" stop-color="#00594F"/></linearGradient></defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#g)"/>
+  <!-- donut: white 3/4, orange 1/4 -->
+  <circle cx="118" cy="118" r="62" fill="none" stroke="#FFFFFF" stroke-width="34"/>
+  <path d="M118 56 A62 62 0 0 1 180 118" fill="none" stroke="#FFA726" stroke-width="34"/>
+  <!-- XML badge -->
+  <circle cx="186" cy="186" r="46" fill="#FFFFFF"/>
+  <path d="M172 168 L154 186 L172 204" fill="none" stroke="#00695C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M200 168 L218 186 L200 204" fill="none" stroke="#00695C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
