@@ -150,7 +150,7 @@ There is no automatic undo. To go back, import the backup (⇧ Import…) and sa
 | M3 | XML editor: line numbers, find/replace, format, edit mode, unsaved-change prompts | ✅ Done |
 | M4 | Validation (structure, FetchXML, metadata, Unified Interface compatibility) and diff | ✅ Done |
 | M5 | Import/export (XML, versioned JSON, CSV inventory) and local backups | ✅ Done |
-| M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | ✅ Built (sandbox test in progress) |
+| M6 | Safe save: confirmation with diff, conflict check, backup, scoped publish, post-save verification | ✅ Done |
 | M7 | Documentation and first release | Planned |
 
 Later phases add the visual designer, local preview, chart comparison and environment comparison.
